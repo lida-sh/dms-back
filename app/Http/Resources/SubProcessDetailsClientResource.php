@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ProcessResource extends JsonResource
+class SubProcessDetailsClientResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -18,13 +18,10 @@ class ProcessResource extends JsonResource
             "id" => $this->id,
             "title" => $this->title,
             "code" => $this->code,
-            "slug" => $this->slug,
-            "status" => $this->status,
-            "architecture_id" => $this->architecture_id,
             "description" => $this->description,
-            "type" => $this->type,
-            "files" => ProcessFileResource::collection($this->whenLoaded("files")),
-            "architecture" => new ArchitectureResource($this->whenLoaded("architecture"))
+            "files" => SubProcessFileClientResource::collection($this->whenLoaded("files")),
+            "architecture" => new ArchitectureClientResource($this->whenLoaded("architecture")),
+            "process" => new ProcessClientResource($this->whenLoaded("process"))
         ];
     }
 }

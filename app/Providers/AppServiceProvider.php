@@ -31,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
             return $value->getClientOriginalExtension() === 'bpm';
         });
         Passport::routes();
-        Passport::tokensExpireIn(now()->addMinutes(1));
+        Passport::tokensExpireIn(now()->addHours(1));
         Passport::refreshTokensExpireIn(now()->addHours(5));
        
        

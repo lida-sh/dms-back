@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ProcessResource extends JsonResource
+class ProcedureDetailsClientResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,16 +15,13 @@ class ProcessResource extends JsonResource
     public function toArray($request)
     {
         return [
-            "id" => $this->id,
             "title" => $this->title,
             "code" => $this->code,
-            "slug" => $this->slug,
-            "status" => $this->status,
-            "architecture_id" => $this->architecture_id,
+            "docType" => $this->docType,
             "description" => $this->description,
-            "type" => $this->type,
-            "files" => ProcessFileResource::collection($this->whenLoaded("files")),
-            "architecture" => new ArchitectureResource($this->whenLoaded("architecture"))
+            "files" => ProcedureFileClientResource::collection($this->whenLoaded("files")),
+            "architecture" => new ArchitectureClientResource($this->whenLoaded("architecture")),
+            "process" => new ProcessClientResource($this->whenLoaded("process"))
         ];
     }
 }

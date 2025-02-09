@@ -23,6 +23,7 @@ class SubProcessResource extends JsonResource
             "architecture_id" => $this->architecture_id,
             "process_id" => $this->process_id,
             "description" => $this->description,
+            "type"=> $this->type,
             "files" => SubProcessFileResource::collection($this->whenLoaded("files")),
             "architecture" => new ArchitectureResource($this->whenLoaded("architecture")),
             "process" => new ProcessResource($this->whenLoaded("process"))
