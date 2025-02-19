@@ -9,8 +9,11 @@ use App\ProcedureFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Hekmatinasser\Verta\Verta;
+
 class ProcedureController extends ApiController
 {
+
     /**
      * Display a listing of the resource.
      *
@@ -31,12 +34,12 @@ class ProcedureController extends ApiController
         })->when($docType, function ($query, $docType) {
             return $query->where("docType", $docType);
         })->when($status, function ($query, $status) {
-            if($status == 1){
+            if ($status == 1) {
                 return $query->where("status", $status);
-            }else{
+            } else {
                 return $query->where("status", 0);
             }
-            
+
         })->when($search, function ($query, $search) {
             return $query->where('title', 'LIKE', "%{$search}%");
         })->when($sortedBy, function ($query, $sortedBy) {
@@ -93,7 +96,8 @@ class ProcedureController extends ApiController
             "description" => $request->description,
             "architecture_id" => $request->architecture_id,
             "process_id" => $request->process_id,
-            "user_id" => auth()->user()->id
+            "user_id" => auth()->user()->id,
+            "notification_date" => $request->notification_date,
 
         ]);
         if ($request->hasFile('files')) {
@@ -125,9 +129,10 @@ class ProcedureController extends ApiController
      */
     public function show($id)
     {
-        $precedure =Procedure::findOrFail($id);
+        $precedure = Procedure::findOrFail($id);
+
         return $this->successResponse((new ProcedureResource($precedure->load(["files", "architecture", "process"]))), 200);
-       
+
     }
 
     /**
@@ -139,6 +144,17 @@ class ProcedureController extends ApiController
      */
     public function update(Request $request, $id)
     {
+        // $jalaliDate = $request->notification_date;
+
+        // ایجاد یک نمونه از Verta با تاریخ شمسی
+        // $verta = Verta::parse($jalaliDate);
+
+        // تبدیل تاریخ شمسی به میلادی
+        // $gregorianDate = $verta->datetime();
+
+        // نمایش تاریخ میلادی
+        // dd($gregorianDate->format('Y-m-d'));
+        
         $validator = Validator::make($request->all(), [
             "architecture_id" => "required|integer",
             "process_id" => "required|integer",
@@ -172,6 +188,7 @@ class ProcedureController extends ApiController
             "code" => $request->code,
             "status" => $request->status,
             "docType" => $request->docType,
+            "notification_date" => Verta::parse($request->notification_date)->datetime()->format('Y-m-d'),
             "description" => $request->description,
         ]);
         if ($request->has("fileIdsForDelete")) {

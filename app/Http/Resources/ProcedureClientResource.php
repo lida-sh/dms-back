@@ -3,7 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-
+use Hekmatinasser\Verta\Verta;
 class ProcedureClientResource extends JsonResource
 {
     /**
@@ -20,6 +20,7 @@ class ProcedureClientResource extends JsonResource
             "code" => $this->code,
             "docType" => $this->docType,
             "type"=> $this->type,
+            "notification_date" => $this->notification_date ? Verta::instance($this->notification_date)->format('Y/m/d'): "",
             "architecture" => new ArchitectureClientResource($this->whenLoaded("architecture")),
             "process" => new ProcessClientResource($this->whenLoaded("process"))
         ];
