@@ -63,7 +63,7 @@ class ProcedureController extends ApiController
      */
     public function store(Request $request)
     {
-        // dd($request->all());
+       
         $validator = Validator::make($request->all(), [
             "architecture_id" => "required|integer",
             "process_id" => "required|integer",
@@ -98,7 +98,6 @@ class ProcedureController extends ApiController
             "process_id" => $request->process_id,
             "user_id" => auth()->user()->id,
             "notification_date" => $request->notification_date,
-
         ]);
         if ($request->hasFile('files')) {
             foreach ($request->file("files") as $file) {
@@ -144,17 +143,8 @@ class ProcedureController extends ApiController
      */
     public function update(Request $request, $id)
     {
-        // $jalaliDate = $request->notification_date;
-
-        // ایجاد یک نمونه از Verta با تاریخ شمسی
-        // $verta = Verta::parse($jalaliDate);
-
-        // تبدیل تاریخ شمسی به میلادی
-        // $gregorianDate = $verta->datetime();
-
-        // نمایش تاریخ میلادی
-        // dd($gregorianDate->format('Y-m-d'));
-        
+       
+        // 
         $validator = Validator::make($request->all(), [
             "architecture_id" => "required|integer",
             "process_id" => "required|integer",
@@ -188,7 +178,8 @@ class ProcedureController extends ApiController
             "code" => $request->code,
             "status" => $request->status,
             "docType" => $request->docType,
-            "notification_date" => Verta::parse($request->notification_date)->datetime()->format('Y-m-d'),
+            // "notification_date" => Verta::parse($request->notification_date)->datetime()->format('Y-m-d'),
+            "notification_date" => $request->notification_date,
             "description" => $request->description,
         ]);
         if ($request->has("fileIdsForDelete")) {

@@ -9,6 +9,7 @@ use App\SubProcessFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Hekmatinasser\Verta\Verta;
 class SubProcessController extends ApiController
 {
     /**
@@ -57,6 +58,7 @@ class SubProcessController extends ApiController
      */
     public function store(Request $request)
     {
+        dd($request->all());
         $validator = Validator::make($request->all(), [
             "architecture_id" => "required|integer",
             "process_id" => "required|integer",
@@ -87,7 +89,8 @@ class SubProcessController extends ApiController
             "description" => $request->description,
             "architecture_id" => $request->architecture_id,
             "process_id" => $request->process_id,
-            "user_id" => auth()->user()->id
+            "user_id" => auth()->user()->id,
+            "notification_date" => $request->notification_date,
 
         ]);
         if ($request->hasFile('files')) {
@@ -131,6 +134,7 @@ class SubProcessController extends ApiController
      */
     public function update(Request $request, $id)
     {
+        
         $validator = Validator::make($request->all(), [
             "architecture_id" => "required|integer",
             "process_id" => "required|integer",
@@ -162,6 +166,7 @@ class SubProcessController extends ApiController
             "code" => $request->code,
             "status" => $request->status,
             "description" => $request->description,
+            "notification_date" => $request->notification_date,
         ]);
         if ($request->has("fileIdsForDelete")) {
             foreach ($request->fileIdsForDelete as $fileId) {
