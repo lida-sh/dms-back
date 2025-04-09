@@ -86,7 +86,8 @@ class ProcessController extends ApiController
             "status" => $request->status,
             "description" => $request->description,
             "architecture_id" => $request->architecture_id,
-            "user_id" => auth()->user()->id
+            "user_id" => auth()->user()->id,
+            "notification_date" => $request->notification_date
 
         ]);
         if ($request->hasFile('files')) {
@@ -130,6 +131,7 @@ class ProcessController extends ApiController
      */
     public function update(Request $request, $id)
     {
+        // dd($request->all());
         $validator = Validator::make($request->all(), [
             "architecture_id" => "required|integer",
             "title" => "string|unique:architectures,title," . $id,
@@ -158,6 +160,7 @@ class ProcessController extends ApiController
             "title" => $request->title,
             "code" => $request->code,
             "description" => $request->description,
+            "notification_date" => $request->notification_date
         ]);
         if ($request->has("fileIdsForDelete")) {
             foreach ($request->fileIdsForDelete as $fileId) {

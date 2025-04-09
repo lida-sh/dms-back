@@ -58,7 +58,7 @@ class SubProcessController extends ApiController
      */
     public function store(Request $request)
     {
-        dd($request->all());
+        
         $validator = Validator::make($request->all(), [
             "architecture_id" => "required|integer",
             "process_id" => "required|integer",

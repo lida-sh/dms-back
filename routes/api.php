@@ -14,6 +14,9 @@ use \V1\Admin\ProcedureController;
 use \V1\Admin\SubProcessController;
 use \V1\Admin\ArchitectureController;
 use \V1\Admin\ProcessController;
+use \V1\Admin\UserController;
+use \V1\Admin\RoleController;
+use \V1\Admin\PermissionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,6 +37,9 @@ Route::group(['prefix' => 'admin','middleware' => ['auth:api']], function () {
     Route::apiResource('/processes', ProcessController::class);
     Route::apiResource('/sub-processes', SubProcessController::class);
     Route::apiResource('/procedures', ProcedureController::class);
+    Route::apiResource('/users', UserController::class);
+    Route::apiResource('/permissions', PermissionController::class);
+    Route::apiResource('/roles', RoleController::class);
     Route::get('/processes-details/{slug}', [App\Http\Controllers\V1\Admin\ProcessController::class, "showBySlug"]);
     Route::get('/sub-processes-details/{slug}', [App\Http\Controllers\V1\Admin\SubProcessController::class, "showBySlug"]);
     Route::get('/procedures-details/{slug}', [App\Http\Controllers\V1\Admin\ProcedureController::class, "showBySlug"]);

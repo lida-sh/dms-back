@@ -143,7 +143,7 @@ class ProcedureController extends ApiController
      */
     public function update(Request $request, $id)
     {
-       
+    //    dd($request->all());
         // 
         $validator = Validator::make($request->all(), [
             "architecture_id" => "required|integer",

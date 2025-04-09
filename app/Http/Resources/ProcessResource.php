@@ -3,7 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-
+use Hekmatinasser\Verta\Verta;
 class ProcessResource extends JsonResource
 {
     /**
@@ -23,6 +23,7 @@ class ProcessResource extends JsonResource
             "architecture_id" => $this->architecture_id,
             "description" => $this->description,
             "type" => $this->type,
+            "notification_date" =>  $this->notification_date ? Verta::instance($this->notification_date)->format('Y/m/d'): "",
             "files" => ProcessFileResource::collection($this->whenLoaded("files")),
             "architecture" => new ArchitectureResource($this->whenLoaded("architecture"))
         ];
