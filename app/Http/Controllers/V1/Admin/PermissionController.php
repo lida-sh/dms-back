@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Permission;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
-class PermissionController extends Controller
+class PermissionController extends ApiController
 {
     /**
      * Display a listing of the resource.
@@ -14,7 +17,8 @@ class PermissionController extends Controller
      */
     public function index()
     {
-        //
+        $permissions = Permission::all();
+        return  $this->successResponse($permissions, 200);
     }
 
     /**
@@ -25,7 +29,23 @@ class PermissionController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request->all());
+        $validator = Validator::make($request->all(), [
+            "permission_name" => "required|string|unique:permissions,name",
+            "permission_display_name" => "required|string",
+        ]);
+        if($validator->fails()){
+            return $this->errorResponse($validator->messages(), 422);
+        }
+        DB::beginTransaction();
+        $permission = Permission::create([
+            "name"=> $request->permission_name,
+            "display_name"=> $request->permission_display_name,
+            "guard_name"=>"api"
+
+        ]);
+        DB::commit();
+        return $this->successResponse($permission, 201);
+
     }
 
     /**

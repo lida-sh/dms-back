@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
+use App\User;
 use Illuminate\Http\Request;
 
-class UserController extends Controller
+class UserController extends ApiController
 {
     /**
      * Display a listing of the resource.
@@ -14,7 +16,12 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
+        $users = User::paginate(10);
+        return $this->successResponse([
+         "users"=>UserResource::collection($users->load(["permissions", "roles"])),
+         "links"=>UserResource::collection($users)->response()->getData()->links,
+         "meta"=>UserResource::collection($users)->response()->getData()->meta,
+        ], 200);
     }
 
     /**
