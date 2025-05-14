@@ -8,6 +8,7 @@ use App\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use App\Http\Resources\RoleResource;
 class RoleController extends ApiController
 {
     /**
@@ -17,8 +18,12 @@ class RoleController extends ApiController
      */
     public function index()
     {
-        $roles = Role::all();
-        return  $this->successResponse($roles, 200);
+        $roles = Role::with('permissions')->get();
+        return $this->successResponse([
+            "roles" =>RoleResource::collection($roles->load("permissions")),
+            // "links" => RoleResource::collection($roles)->response()->getData()->links,
+            // "meta" => RoleResource::collection($roles)->response()->getData()->meta
+        ], 200);
     }
 
     /**
@@ -59,7 +64,7 @@ class RoleController extends ApiController
             //     }
             // }
         // }
-        Permission::where('name', 'create-user')->update(['guard_name' => 'api']);
+       
         $role->givePermissionTo($request->permissions);
         DB::commit();
         return $this->successResponse($role, 201);
@@ -98,4 +103,5 @@ class RoleController extends ApiController
     {
         //
     }
+    
 }

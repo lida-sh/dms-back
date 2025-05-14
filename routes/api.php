@@ -46,6 +46,7 @@ Route::group(['prefix' => 'admin','middleware' => ['auth:api']], function () {
     Route::get("/architectures/{architecture}/processes", [App\Http\Controllers\V1\Admin\ArchitectureController::class, "getProcessesOfArchitecture"]);
     Route::get('/identity', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/get-roles-permissions', [App\Http\Controllers\V1\Admin\UserController::class, "getRolesAndPermissions"]);
 });
 
 
