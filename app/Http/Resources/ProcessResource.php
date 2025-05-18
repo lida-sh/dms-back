@@ -25,7 +25,8 @@ class ProcessResource extends JsonResource
             "type" => $this->type,
             "notification_date" =>  $this->notification_date ? Verta::instance($this->notification_date)->format('Y/m/d'): "",
             "files" => ProcessFileResource::collection($this->whenLoaded("files")),
-            "architecture" => new ArchitectureResource($this->whenLoaded("architecture"))
+            "architecture" => new ArchitectureResource($this->whenLoaded("architecture")),
+            "user" => new userBaseResource($this->whenLoaded("user"))
         ];
     }
 }

@@ -44,7 +44,7 @@ class SubProcessController extends ApiController
                 return $query->oldest();
         })->paginate(4);
         return $this->successResponse([
-            "subProcesses" => SubProcessResource::collection($processes->load(["architecture", "process"])),
+            "subProcesses" => SubProcessResource::collection($processes->load(["architecture", "process", "user"])),
             "links" => SubProcessResource::collection($processes)->response()->getData()->links,
             "meta" => SubProcessResource::collection($processes)->response()->getData()->meta
         ], 200);

@@ -28,7 +28,8 @@ class ProcedureResource extends JsonResource
             "notification_date" =>  $this->notification_date ? Verta::instance($this->notification_date)->format('Y/m/d'): "",
             "files" => ProcedureFileResource::collection($this->whenLoaded("files")),
             "architecture" => new ArchitectureResource($this->whenLoaded("architecture")),
-            "process" => new ProcessResource($this->whenLoaded("process"))
+            "process" => new ProcessResource($this->whenLoaded("process")),
+            "user" => new userBaseResource($this->whenLoaded("user"))
         ];
     }
 }

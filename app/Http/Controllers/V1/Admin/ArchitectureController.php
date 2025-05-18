@@ -179,5 +179,14 @@ class ArchitectureController extends ApiController
         $processes = $architecture->processes;
         return $this->successResponse(ProcessResource::collection($processes), 200);
     }
+    public function getArchitectures(){    
+        $architectures = Architecture::paginate(3);
+           return $this->successResponse([
+            "architectures" => ArchitectureResource::collection($architectures->load(["user"])),
+            "links" => ArchitectureResource::collection($architectures)->response()->getData()->links,
+            "meta" => ArchitectureResource::collection($architectures)->response()->getData()->meta
+        ], 200);
+   
+    }
 
 }

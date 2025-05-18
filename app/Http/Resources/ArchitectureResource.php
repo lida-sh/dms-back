@@ -15,12 +15,14 @@ class ArchitectureResource extends JsonResource
     public function toArray($request)
     {
         return [
+            "id" => $this->id,
             "title" => $this->title,
             "code" => $this->code,
             "slug" => $this->slug,
             "type" => $this->type,
             "description" => $this->description,
             "files" => ArchitectureFileResource::collection($this->whenLoaded("files")),
+            "user" => new userBaseResource($this->whenLoaded("user"))
         ];
     }
 }

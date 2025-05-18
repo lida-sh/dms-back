@@ -43,7 +43,7 @@ class ProcessController extends ApiController
                 return $query->oldest();
         })->paginate(2);
         return $this->successResponse([
-            "processes" => ProcessResource::collection($processes->load("architecture")),
+            "processes" => ProcessResource::collection($processes->load(["architecture", "user"])),
             "links" => ProcessResource::collection($processes)->response()->getData()->links,
             "meta" => ProcessResource::collection($processes)->response()->getData()->meta
         ], 200);

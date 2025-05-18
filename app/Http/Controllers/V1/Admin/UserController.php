@@ -5,6 +5,7 @@ namespace App\Http\Controllers\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PermissionResource;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\UserEditResource;
 use App\User;
 use Illuminate\Http\Request;
 use App\Role;
@@ -76,7 +77,7 @@ class UserController extends ApiController
     public function show($id)
     {
         $user = User::findOrFail($id);
-        return $this->successResponse((new UserResource($user->load(["roles", "permissions"]))), 200);
+        return $this->successResponse((new UserEditResource($user->load(["roles", "permissions"]))), 200);
         
     }
 
@@ -89,7 +90,7 @@ class UserController extends ApiController
      */
     public function update(Request $request, $id)
     {
-        dd($request->all());
+        // dd($request->all());
         $validator = Validator::make($request->all(), [
             "first_name" => "required|string",
             "last_name" => "required|string",

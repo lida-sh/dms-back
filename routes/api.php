@@ -47,6 +47,7 @@ Route::group(['prefix' => 'admin','middleware' => ['auth:api']], function () {
     Route::get('/identity', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/get-roles-permissions', [App\Http\Controllers\V1\Admin\UserController::class, "getRolesAndPermissions"]);
+    Route::get('/get-architectures', [App\Http\Controllers\V1\Admin\ArchitectureController::class, "getArchitectures"]);
 });
 
 

@@ -49,7 +49,7 @@ class ProcedureController extends ApiController
                 return $query->oldest();
         })->paginate(4);
         return $this->successResponse([
-            "procedures" => ProcedureResource::collection($procedures->load(["architecture", "process"])),
+            "procedures" => ProcedureResource::collection($procedures->load(["architecture", "process", "user"])),
             "links" => ProcedureResource::collection($procedures)->response()->getData()->links,
             "meta" => ProcedureResource::collection($procedures)->response()->getData()->meta
         ], 200);
@@ -129,7 +129,6 @@ class ProcedureController extends ApiController
     public function show($id)
     {
         $precedure = Procedure::findOrFail($id);
-
         return $this->successResponse((new ProcedureResource($precedure->load(["files", "architecture", "process"]))), 200);
 
     }

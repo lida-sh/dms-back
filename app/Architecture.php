@@ -24,4 +24,7 @@ class Architecture extends Model
     public function processes(){
         return $this->hasMany(Process::class, "architecture_id");
     }
+    public function user(){
+        return $this->belongsTo(User::class, "user_id");
+    }
 }

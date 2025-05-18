@@ -26,4 +26,7 @@ class Procedure extends Model
     public function files(){
         return $this->hasMany(ProcedureFile::class, "procedure_id");
     }
+     public function user(){
+        return $this->belongsTo(User::class, "user_id");
+    }
 }

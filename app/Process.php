@@ -26,4 +26,7 @@ class Process extends Model
     public function subProcesses(){
         return $this->hasMany(SubProcess::class, "process_id");
     }
+    public function user(){
+        return $this->belongsTo(User::class, "user_id");
+    }
 }
