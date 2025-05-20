@@ -29,7 +29,7 @@ class ProcedureClientController extends ApiController
                 return $query->latest();
             } else if ($sortedBy == "oldest")
                 return $query->oldest();
-        })->where("status", 1)->paginate(3);
+        })->where("status", 1)->paginate(10);
         return $this->successResponse([
             "procedures" => ProcedureClientResource::collection($procedures->load(["architecture", "process"])),
             "links" => ProcedureClientResource::collection($procedures)->response()->getData()->links,

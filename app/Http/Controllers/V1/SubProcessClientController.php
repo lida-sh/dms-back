@@ -26,7 +26,7 @@ class SubProcessClientController extends ApiController
                 return $query->latest();
             } else if ($sortedBy == "oldest")
                 return $query->oldest();
-        })->where("status", 1)->paginate(1);
+        })->where("status", 1)->paginate(10);
         return $this->successResponse([
             "subProcesses" => SubProcessClientResource::collection($subProcesses->load(["architecture", "process"])),
             "links" => SubProcessClientResource::collection($subProcesses)->response()->getData()->links,
