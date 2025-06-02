@@ -47,7 +47,7 @@ class ProcedureController extends ApiController
                 return $query->latest();
             } else if ($sortedBy == "oldest")
                 return $query->oldest();
-        })->paginate(4);
+        })->paginate(10);
         return $this->successResponse([
             "procedures" => ProcedureResource::collection($procedures->load(["architecture", "process", "user"])),
             "links" => ProcedureResource::collection($procedures)->response()->getData()->links,
@@ -63,7 +63,7 @@ class ProcedureController extends ApiController
      */
     public function store(Request $request)
     {
-       
+
         $validator = Validator::make($request->all(), [
             "architecture_id" => "required|integer",
             "process_id" => "required|integer",
@@ -142,7 +142,7 @@ class ProcedureController extends ApiController
      */
     public function update(Request $request, $id)
     {
-    //    dd($request->all());
+        //    dd($request->all());
         // 
         $validator = Validator::make($request->all(), [
             "architecture_id" => "required|integer",
@@ -214,7 +214,17 @@ class ProcedureController extends ApiController
      */
     public function destroy($id)
     {
-        //
+        $precedure = Procedure::findOrFail($id);
+        
+        foreach ($precedure->files as $file) {
+            $fullPath = storage_path('app/public/files/procedures/'.$file->filePath);
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+            ProcedureFile::findOrFail($file->id)->delete();
+        }
+        $precedure->delete();
+        return $this->successResponse(1, 200);
     }
     public function showBySlug($slug)
     {

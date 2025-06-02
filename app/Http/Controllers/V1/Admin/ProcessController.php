@@ -41,7 +41,7 @@ class ProcessController extends ApiController
                 return $query->latest();
             } else if ($sortedBy == "oldest")
                 return $query->oldest();
-        })->paginate(2);
+        })->paginate(10);
         return $this->successResponse([
             "processes" => ProcessResource::collection($processes->load(["architecture", "user"])),
             "links" => ProcessResource::collection($processes)->response()->getData()->links,
