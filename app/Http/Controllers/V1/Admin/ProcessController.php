@@ -10,7 +10,7 @@ use App\ProcessFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-
+use App\Services\DataConverter;
 
 class ProcessController extends ApiController
 {
@@ -160,7 +160,7 @@ class ProcessController extends ApiController
             "title" => $request->title,
             "code" => $request->code,
             "description" => $request->description,
-            "notification_date" => $request->notification_date
+            "notification_date" => DataConverter::convertToGregorian($request->notification_date)
         ]);
         if ($request->has("fileIdsForDelete")) {
             foreach ($request->fileIdsForDelete as $fileId) {
@@ -195,7 +195,16 @@ class ProcessController extends ApiController
      */
     public function destroy($id)
     {
-        //
+        $process = Process::findOrFail($id);
+        foreach ($process->files as $file) {
+            $fullPath = public_path('storage/files/processes/'.$file->filePath);
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+            ProcessFile::findOrFail($file->id)->delete();
+        }
+        $process->delete();
+        return $this->successResponse(1, 200);
     }
     public function showBySlug($slug)
     {

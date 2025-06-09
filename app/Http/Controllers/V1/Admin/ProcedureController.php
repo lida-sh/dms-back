@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Hekmatinasser\Verta\Verta;
-
+use App\Services\DataConverter;
 class ProcedureController extends ApiController
 {
 
@@ -129,6 +129,7 @@ class ProcedureController extends ApiController
     public function show($id)
     {
         $precedure = Procedure::findOrFail($id);
+        // dd($precedure);
         return $this->successResponse((new ProcedureResource($precedure->load(["files", "architecture", "process"]))), 200);
 
     }
@@ -140,10 +141,10 @@ class ProcedureController extends ApiController
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
+    
     public function update(Request $request, $id)
     {
-        //    dd($request->all());
-        // 
+       
         $validator = Validator::make($request->all(), [
             "architecture_id" => "required|integer",
             "process_id" => "required|integer",
@@ -178,14 +179,15 @@ class ProcedureController extends ApiController
             "status" => $request->status,
             "docType" => $request->docType,
             // "notification_date" => Verta::parse($request->notification_date)->datetime()->format('Y-m-d'),
-            "notification_date" => $request->notification_date,
+            "notification_date" => DataConverter::convertToGregorian($request->notification_date),
             "description" => $request->description,
         ]);
         if ($request->has("fileIdsForDelete")) {
             foreach ($request->fileIdsForDelete as $fileId) {
                 $file = ProcedureFile::findOrFail($fileId);
-                if (file_exists($file->filePath)) {
-                    unlink($file->filePath);
+                $fullPath = public_path('storage/files/procedures/'.$file->filePath);
+                if (file_exists($fullPath)) {
+                    unlink($fullPath);
                 }
                 $file->delete();
             }
@@ -215,9 +217,8 @@ class ProcedureController extends ApiController
     public function destroy($id)
     {
         $precedure = Procedure::findOrFail($id);
-        
         foreach ($precedure->files as $file) {
-            $fullPath = storage_path('app/public/files/procedures/'.$file->filePath);
+            $fullPath = public_path('storage/files/procedures/'.$file->filePath);
             if (file_exists($fullPath)) {
                 unlink($fullPath);
             }

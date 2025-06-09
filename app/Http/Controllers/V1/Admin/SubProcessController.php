@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Hekmatinasser\Verta\Verta;
+use App\Services\DataConverter;
 class SubProcessController extends ApiController
 {
     /**
@@ -42,7 +43,7 @@ class SubProcessController extends ApiController
                 return $query->latest();
             } else if ($sortedBy == "oldest")
                 return $query->oldest();
-        })->paginate(4);
+        })->paginate(1);
         return $this->successResponse([
             "subProcesses" => SubProcessResource::collection($processes->load(["architecture", "process", "user"])),
             "links" => SubProcessResource::collection($processes)->response()->getData()->links,
@@ -166,7 +167,7 @@ class SubProcessController extends ApiController
             "code" => $request->code,
             "status" => $request->status,
             "description" => $request->description,
-            "notification_date" => $request->notification_date,
+            "notification_date" => DataConverter::convertToGregorian($request->notification_date),
         ]);
         if ($request->has("fileIdsForDelete")) {
             foreach ($request->fileIdsForDelete as $fileId) {
@@ -201,7 +202,16 @@ class SubProcessController extends ApiController
      */
     public function destroy($id)
     {
-        //
+        $subProcess = SubProcess::findOrFail($id);
+        foreach ($subProcess->files as $file) {
+            $fullPath = public_path('storage/files/sub-processes/'.$file->filePath);
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+            SubProcessFile::findOrFail($file->id)->delete();
+        }
+        $subProcess->delete();
+        return $this->successResponse(1, 200);
     }
     public function showBySlug($slug)
     {
