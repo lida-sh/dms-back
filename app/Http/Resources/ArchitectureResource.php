@@ -18,6 +18,7 @@ class ArchitectureResource extends JsonResource
             "id" => $this->id,
             "title" => $this->title,
             "code" => $this->code,
+            "status" => $this->status,
             "slug" => $this->slug,
             "type" => $this->type,
             "description" => $this->description,

@@ -43,6 +43,7 @@ Route::group(['prefix' => 'admin','middleware' => ['auth:api']], function () {
     Route::get('/processes-details/{slug}', [App\Http\Controllers\V1\Admin\ProcessController::class, "showBySlug"]);
     Route::get('/sub-processes-details/{slug}', [App\Http\Controllers\V1\Admin\SubProcessController::class, "showBySlug"]);
     Route::get('/procedures-details/{slug}', [App\Http\Controllers\V1\Admin\ProcedureController::class, "showBySlug"]);
+    Route::get('/architectures-details/{slug}', [App\Http\Controllers\V1\Admin\ArchitectureController::class, "showBySlug"]);
     Route::get("/architectures/{architecture}/processes", [App\Http\Controllers\V1\Admin\ArchitectureController::class, "getProcessesOfArchitecture"]);
     Route::get('/identity', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);

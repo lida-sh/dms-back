@@ -172,7 +172,16 @@ class ArchitectureController extends ApiController
      */
     public function destroy($id)
     {
-        //
+        $architecture = Architecture::findOrFail($id);
+        foreach ($architecture->files as $file) {
+            $fullPath = public_path('storage/files/architectures/'.$file->filePath);
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+            ArchitectureFile::findOrFail($file->id)->delete();
+        }
+        $architecture->delete();
+        return $this->successResponse(1, 200);
     }
     public function getProcessesOfArchitecture(Architecture $architecture)
     {
@@ -187,6 +196,14 @@ class ArchitectureController extends ApiController
             "meta" => ArchitectureResource::collection($architectures)->response()->getData()->meta
         ], 200);
    
+    }
+    public function showBySlug($slug)
+    {
+
+        $architecture = Architecture::where('slug', $slug)->first();
+        // dd($architecture);
+        return $this->successResponse((new ArchitectureResource($architecture->load(["files", "user"]))), 200);
+
     }
 
 }
