@@ -71,7 +71,7 @@ class ProcedureController extends ApiController
             "code" => "required|string|unique:procedures,code",
             "status" => "required|string",
             "docType" => "required|string",
-            "files.*" => "file|max:2048",
+            "files.*" => "file|max:4096",
         ]);
         $allowedExtensions = ['bpm', 'jpg', 'jpeg', 'png', 'tiff', 'docx', 'doc', 'gif', 'pdf'];
         if ($request->hasFile('files')) {
