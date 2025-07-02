@@ -64,6 +64,8 @@ class ProcedureController extends ApiController
     public function store(Request $request)
     {
 
+        // dd($request->all());
+     
         $validator = Validator::make($request->all(), [
             "architecture_id" => "required|integer",
             "process_id" => "required|integer",
@@ -85,7 +87,10 @@ class ProcedureController extends ApiController
         if ($validator->fails()) {
             return $this->errorResponse($validator->messages(), 422);
         }
-
+        $notification_date = $request->notification_date;
+        if ($request->notification_date === 'Invalid Date') {
+            $notification_date= null;
+        }
         DB::beginTransaction();
 
         $procedure = Procedure::create([
@@ -97,7 +102,7 @@ class ProcedureController extends ApiController
             "architecture_id" => $request->architecture_id,
             "process_id" => $request->process_id,
             "user_id" => auth()->user()->id,
-            "notification_date" => $request->notification_date,
+            "notification_date" => $notification_date,
         ]);
         if ($request->hasFile('files')) {
             foreach ($request->file("files") as $file) {
@@ -141,10 +146,10 @@ class ProcedureController extends ApiController
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    
+
     public function update(Request $request, $id)
     {
-       
+
         $validator = Validator::make($request->all(), [
             "architecture_id" => "required|integer",
             "process_id" => "required|integer",
@@ -185,7 +190,7 @@ class ProcedureController extends ApiController
         if ($request->has("fileIdsForDelete")) {
             foreach ($request->fileIdsForDelete as $fileId) {
                 $file = ProcedureFile::findOrFail($fileId);
-                $fullPath = public_path('storage/files/procedures/'.$file->filePath);
+                $fullPath = public_path('storage/files/procedures/' . $file->filePath);
                 if (file_exists($fullPath)) {
                     unlink($fullPath);
                 }
@@ -218,7 +223,7 @@ class ProcedureController extends ApiController
     {
         $precedure = Procedure::findOrFail($id);
         foreach ($precedure->files as $file) {
-            $fullPath = public_path('storage/files/procedures/'.$file->filePath);
+            $fullPath = public_path('storage/files/procedures/' . $file->filePath);
             if (file_exists($fullPath)) {
                 unlink($fullPath);
             }
