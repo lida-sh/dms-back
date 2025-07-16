@@ -37,13 +37,14 @@ class SearchController extends ApiController
         $itemSearch = $request->input("itemSearch");
         $docType = $request->input("docType");
         // return $request->all();
-        if($itemSearch === "title"){
+        
+        if($itemSearch === "code"){
             switch ($docType) {
                 case "process":
                     $processes = Process::query()->when($architecture_id, function ($query, $architecture_id) {
                         return $query->where("architecture_id", $architecture_id);
                     })->when($wordSearch, function ($query, $wordSearch) {
-                        return $query->where('title', 'LIKE', "%{$wordSearch}%");
+                        return $query->where('code', 'LIKE', "%{$wordSearch}%");
                     })->paginate(2);
                     // return response()->json($processes, 200);
                     return $this->successResponse([
@@ -57,7 +58,7 @@ class SearchController extends ApiController
                     })->when($process_id, function ($query, $process_id) {
                         return $query->where("process_id", $process_id);
                     })->when($wordSearch, function ($query, $wordSearch) {
-                        return $query->where('title', 'LIKE', "%{$wordSearch}%");
+                        return $query->where('code', 'LIKE', "%{$wordSearch}%");
                     })->paginate(4);
                     return $this->successResponse([
                         "subProcesses" => SubProcessClientResource::collection($processes->load(["architecture", "process"])),
@@ -70,7 +71,7 @@ class SearchController extends ApiController
                     })->when($process_id, function ($query, $process_id) {
                         return $query->where("process_id", $process_id);
                     })->when($wordSearch, function ($query, $wordSearch) {
-                        return $query->where('title', 'LIKE', "%{$wordSearch}%");
+                        return $query->where('code', 'LIKE', "%{$wordSearch}%");
                     })->when($docType, function ($query, $docType) {
                         return $query->where('docType', 'procedures');
                     })->paginate(4);
@@ -85,7 +86,7 @@ class SearchController extends ApiController
                     })->when($process_id, function ($query, $process_id) {
                         return $query->where("process_id", $process_id);
                     })->when($wordSearch, function ($query, $wordSearch) {
-                        return $query->where('title', 'LIKE', "%{$wordSearch}%");
+                        return $query->where('code', 'LIKE', "%{$wordSearch}%");
                     })->when($docType, function ($query, $docType) {
                         return $query->where('docType', 'instructions');
                     })->paginate(4);
@@ -100,7 +101,7 @@ class SearchController extends ApiController
                     })->when($process_id, function ($query, $process_id) {
                         return $query->where("process_id", $process_id);
                     })->when($wordSearch, function ($query, $wordSearch) {
-                        return $query->where('title', 'LIKE', "%{$wordSearch}%");
+                        return $query->where('code', 'LIKE', "%{$wordSearch}%");
                     })->when($docType, function ($query, $docType) {
                         return $query->where('docType', 'contracts');
                     })->paginate(4);
@@ -115,7 +116,7 @@ class SearchController extends ApiController
                     })->when($process_id, function ($query, $process_id) {
                         return $query->where("process_id", $process_id);
                     })->when($wordSearch, function ($query, $wordSearch) {
-                        return $query->where('title', 'LIKE', "%{$wordSearch}%");
+                        return $query->where('code', 'LIKE', "%{$wordSearch}%");
                     })->when($docType, function ($query, $docType) {
                         return $query->where('docType', 'forms');
                     })->paginate(4);
@@ -130,7 +131,7 @@ class SearchController extends ApiController
                     })->when($process_id, function ($query, $process_id) {
                         return $query->where("process_id", $process_id);
                     })->when($wordSearch, function ($query, $wordSearch) {
-                        return $query->where('title', 'LIKE', "%{$wordSearch}%");
+                        return $query->where('code', 'LIKE', "%{$wordSearch}%");
                     })->when($docType, function ($query, $docType) {
                         return $query->where('docType', 'regulations');
                     })->paginate(4);
@@ -144,14 +145,14 @@ class SearchController extends ApiController
     
             }
         }
-        elseif($itemSearch === "code"){
+        elseif($itemSearch === "title" || $itemSearch == null){
             switch ($docType) {
                 case "process":
                     $processes = Process::query()->when($architecture_id, function ($query, $architecture_id) {
                         return $query->where("architecture_id", $architecture_id);
                     })->when($wordSearch, function ($query, $wordSearch) {
-                        return $query->where('code', 'LIKE', "%{$wordSearch}%");
-                    })->paginate(2);
+                        return $query->where('title', 'LIKE', "%{$wordSearch}%");
+                    })->paginate(10);
                     // return response()->json($processes, 200);
                     return $this->successResponse([
                         "processes" => ProcessClientResource::collection($processes->load("architecture")),
@@ -164,8 +165,8 @@ class SearchController extends ApiController
                     })->when($process_id, function ($query, $process_id) {
                         return $query->where("process_id", $process_id);
                     })->when($wordSearch, function ($query, $wordSearch) {
-                        return $query->where('code', 'LIKE', "%{$wordSearch}%");
-                    })->paginate(4);
+                        return $query->where('title', 'LIKE', "%{$wordSearch}%");
+                    })->paginate(10);
                     return $this->successResponse([
                         "subProcesses" => SubProcessClientResource::collection($processes->load(["architecture", "process"])),
                         "links" => SubProcessClientResource::collection($processes)->response()->getData()->links,
@@ -177,7 +178,7 @@ class SearchController extends ApiController
                     })->when($process_id, function ($query, $process_id) {
                         return $query->where("process_id", $process_id);
                     })->when($wordSearch, function ($query, $wordSearch) {
-                        return $query->where('code', 'LIKE', "%{$wordSearch}%");
+                        return $query->where('title', 'LIKE', "%{$wordSearch}%");
                     })->when($docType, function ($query, $docType) {
                         return $query->where('docType', 'procedures');
                     })->paginate(4);
@@ -192,9 +193,9 @@ class SearchController extends ApiController
                     })->when($process_id, function ($query, $process_id) {
                         return $query->where("process_id", $process_id);
                     })->when($wordSearch, function ($query, $wordSearch) {
-                        return $query->where('code', 'LIKE', "%{$wordSearch}%");
+                        return $query->where('title', 'LIKE', "%{$wordSearch}%");
                     })->when($docType, function ($query, $docType) {
-                        return $query->where('docType', 'instructions');
+                        return $query->where('docType', 'instruction');
                     })->paginate(4);
                     return $this->successResponse([
                         "procedures" => ProcedureClientResource::collection($procedures->load(["architecture", "process"])),
@@ -207,9 +208,9 @@ class SearchController extends ApiController
                     })->when($process_id, function ($query, $process_id) {
                         return $query->where("process_id", $process_id);
                     })->when($wordSearch, function ($query, $wordSearch) {
-                        return $query->where('code', 'LIKE', "%{$wordSearch}%");
+                        return $query->where('title', 'LIKE', "%{$wordSearch}%");
                     })->when($docType, function ($query, $docType) {
-                        return $query->where('docType', 'contracts');
+                        return $query->where('docType', 'contract');
                     })->paginate(4);
                     return $this->successResponse([
                         "procedures" => ProcedureClientResource::collection($procedures->load(["architecture", "process"])),
@@ -222,9 +223,9 @@ class SearchController extends ApiController
                     })->when($process_id, function ($query, $process_id) {
                         return $query->where("process_id", $process_id);
                     })->when($wordSearch, function ($query, $wordSearch) {
-                        return $query->where('code', 'LIKE', "%{$wordSearch}%");
+                        return $query->where('title', 'LIKE', "%{$wordSearch}%");
                     })->when($docType, function ($query, $docType) {
-                        return $query->where('docType', 'forms');
+                        return $query->where('docType', 'form');
                     })->paginate(4);
                     return $this->successResponse([
                         "procedures" => ProcedureClientResource::collection($procedures->load(["architecture", "process"])),
@@ -237,9 +238,9 @@ class SearchController extends ApiController
                     })->when($process_id, function ($query, $process_id) {
                         return $query->where("process_id", $process_id);
                     })->when($wordSearch, function ($query, $wordSearch) {
-                        return $query->where('code', 'LIKE', "%{$wordSearch}%");
+                        return $query->where('title', 'LIKE', "%{$wordSearch}%");
                     })->when($docType, function ($query, $docType) {
-                        return $query->where('docType', 'regulations');
+                        return $query->where('docType', 'regulation');
                     })->paginate(4);
                     return $this->successResponse([
                         "procedures" => ProcedureClientResource::collection($procedures->load(["architecture", "process"])),
@@ -247,6 +248,7 @@ class SearchController extends ApiController
                         "meta" => ProcedureClientResource::collection($procedures)->response()->getData()->meta
                     ], 200);
                 default:
+                    
                     return $this->successResponse([], 200);
     
             }
