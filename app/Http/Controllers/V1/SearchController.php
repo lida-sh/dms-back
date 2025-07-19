@@ -265,7 +265,7 @@ class SearchController extends ApiController
                 } else if (Str::contains($wordSearch, "زیرفرایند")) {
                     $search = trim(str_replace("زیرفرایند" . ' ', '', $wordSearch));
                 }
-                $subProcesses = SubProcess::where('title', 'LIKE', "%{$search}%")->paginate(4);
+                $subProcesses = SubProcess::where('title', 'LIKE', "%{$search}%")->where("status", 1)->paginate(4);
                 $data = collect([
                     "subProcesses" => SubProcessClientResource::collection($subProcesses->load(["architecture", "process"])),
                     "procedures" => [],
@@ -278,7 +278,7 @@ class SearchController extends ApiController
                 ], 200);
             case Str::contains($wordSearch, "فرایند"):
                 $search = trim(str_replace("فرایند" . ' ', '', $wordSearch));
-                $processes = Process::where('title', 'LIKE', "%{$search}%")->paginate(4);
+                $processes = Process::where('title', 'LIKE', "%{$search}%")->where("status", 1)->paginate(4);
                 $data = collect([
                     "subProcesses" => [],
                     "procedures" => [],
@@ -297,7 +297,7 @@ class SearchController extends ApiController
                     $search = trim(str_replace("روشاجرایی" . ' ', '', $wordSearch));
                 }
                 // $wordSearch = preg_replace('/\b' . preg_quote("روش اجرایی", '/') . '\b\s*/', '', $wordSearch);
-                $procedures = Procedure::where('title', 'LIKE', "%{$search}%")->where("docType", "procedures")->paginate(4);
+                $procedures = Procedure::where('title', 'LIKE', "%{$search}%")->where("docType", "procedures")->where("status", 1)->paginate(4);
                 $data = collect([
                     "procedures" => ProcedureClientResource::collection($procedures->load(["architecture", "process"])),
                     "subProcesses" => [],
@@ -310,7 +310,7 @@ class SearchController extends ApiController
                 ], 200);
             case Str::contains($wordSearch, "دستورالعمل"):
                 $search = trim(str_replace("دستورالعمل" . ' ', '', $wordSearch));
-                $procedures = Procedure::where('title', 'LIKE', "%{$search}%")->where("docType", "instructions")->paginate(4);
+                $procedures = Procedure::where('title', 'LIKE', "%{$search}%")->where("docType", "instruction")->where("status", 1)->paginate(4);
                 $data = collect([
                     "procedures" => ProcedureClientResource::collection($procedures->load(["architecture", "process"])),
                     "subProcesses" => [],
@@ -323,7 +323,7 @@ class SearchController extends ApiController
                 ], 200);
             case Str::contains($wordSearch, "قرارداد"):
                 $search = trim(str_replace("قرارداد" . ' ', '', $wordSearch));
-                $procedures = Procedure::where('title', 'LIKE', "%{$search}%")->where("docType", "contracts")->paginate(4);
+                $procedures = Procedure::where('title', 'LIKE', "%{$search}%")->where("docType", "contract")->where("status", 1)->paginate(4);
                 $data = collect([
                     "procedures" => ProcedureClientResource::collection($procedures->load(["architecture", "process"])),
                     "subProcesses" => [],
@@ -336,7 +336,7 @@ class SearchController extends ApiController
                 ], 200);
             case Str::contains($wordSearch, "فرم"):
                 $search = trim(str_replace("فرم" . ' ', '', $wordSearch));
-                $procedures = Procedure::where('title', 'LIKE', "%{$search}%")->where("docType", "forms")->paginate(4);
+                $procedures = Procedure::where('title', 'LIKE', "%{$search}%")->where("docType", "form")->where("status", 1)->paginate(4);
                 $data = collect([
                     "procedures" => ProcedureClientResource::collection($procedures->load(["architecture", "process"])),
                     "subProcesses" => [],
@@ -357,7 +357,7 @@ class SearchController extends ApiController
                 } else if (Str::contains($wordSearch, "آییننامه")) {
                     $search = trim(str_replace("آییننامه" . ' ', '', $wordSearch));
                 }
-                $procedures = Procedure::where('title', 'LIKE', "%{$search}%")->where("docType", "regulations")->paginate(4);
+                $procedures = Procedure::where('title', 'LIKE', "%{$search}%")->where("docType", "regulation")->where("status", 1)->paginate(4);
                 $data = collect([
                     "procedures" => ProcedureClientResource::collection($procedures->load(["architecture", "process"])),
                     "subProcesses" => [],
@@ -370,7 +370,7 @@ class SearchController extends ApiController
                 ], 200);
             case Str::contains($wordSearch, "PS") || Str::contains($wordSearch, "ps"):
                 $search = strtoupper(trim($wordSearch));
-                $processes = Process::where('code', 'LIKE', "%{$search}%")->paginate(4);
+                $processes = Process::where('code', 'LIKE', "%{$search}%")->where("status", 1)->paginate(4);
                 $data = collect([
                     "processes" => ProcessClientResource::collection($processes->load("architecture")),
                     "subProcesses" => [],
@@ -386,7 +386,7 @@ class SearchController extends ApiController
                 );
             case Str::contains($wordSearch, "SP") || Str::contains($wordSearch, "sp"):
                 $search = strtoupper(trim($wordSearch));
-                $subProcesses = SubProcess::where('code', 'LIKE', "%{$search}%")->paginate(4);
+                $subProcesses = SubProcess::where('code', 'LIKE', "%{$search}%")->where("status", 1)->paginate(4);
                 $data = collect([
                     "subProcesses" => SubProcessClientResource::collection($subProcesses->load("architecture")),
                     "procedures" => [],
@@ -402,7 +402,7 @@ class SearchController extends ApiController
                 );
             case Str::contains($wordSearch, "PR") || Str::contains($wordSearch, "pr") || Str::contains($wordSearch, "IN") || Str::contains($wordSearch, "in") || Str::contains($wordSearch, "FR") || Str::contains($wordSearch, "fr") || Str::contains($wordSearch, "CO") || Str::contains($wordSearch, "co") || Str::contains($wordSearch, "RE") || Str::contains($wordSearch, "re"):
                 $search = strtoupper(trim($wordSearch));
-                $procedures = Procedure::where('code', 'LIKE', "%{$search}%")->paginate(4);
+                $procedures = Procedure::where('code', 'LIKE', "%{$search}%")->where("status", 1)->paginate(4);
                 $data = collect([
                     "procedures" => ProcedureClientResource::collection($procedures->load(["architecture", "process"])),
                     "subProcesses" => [],
