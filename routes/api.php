@@ -2,6 +2,7 @@
 
 
 use App\Http\Controllers\V1\ArchitectureClientController;
+use App\Http\Controllers\V1\ForgetPasswordController;
 use App\Http\Controllers\V1\ProcedureClientController;
 use App\Http\Controllers\V1\ProcessClientController;
 use App\Http\Controllers\V1\SearchController;
@@ -56,6 +57,7 @@ Route::group(['prefix' => 'admin','middleware' => ['auth:api']], function () {
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/refresh', [AuthController::class, 'refreshToken']);
+Route::post('/forget-password', [ForgetPasswordController::class, 'forgetPassword']);
 
 
 
