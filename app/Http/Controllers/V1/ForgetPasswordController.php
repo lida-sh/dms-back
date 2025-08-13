@@ -24,7 +24,7 @@ class ForgetPasswordController extends ApiController
         }
         $email = DB::table("password_reset_tokens")->where("email", $request->email)->first();
         if($email !== null){
-            return $this->errorResponse(["email"=>"ایمیل فراموشی رمز عبور قبلا ارسال شده است."], 422);
+            return $this->errorResponse(["email"=>["ایمیل فراموشی رمز عبور قبلا ارسال شده است."]], 422);
         }
         $token = Str::random(64);
         DB::table("password_reset_tokens")->insert([
