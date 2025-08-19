@@ -58,6 +58,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/refresh', [AuthController::class, 'refreshToken']);
 Route::post('/forget-password', [ForgetPasswordController::class, 'forgetPassword']);
+Route::post('/reset-password', [ForgetPasswordController::class, 'resetPassword']);
 
 
 

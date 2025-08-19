@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ResetPassword;
 use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use App\User;
 use Hash;
+use Illuminate\Support\Facades\Mail;
 class ForgetPasswordController extends ApiController
 {
     public function forgetPassword(Request $request){
@@ -32,6 +34,8 @@ class ForgetPasswordController extends ApiController
             'token'=>$token,
             'created_at'=>Carbon::now()
         ]);
+        Mail::send(new ResetPassword($token, $request->email));
+        
         return response()->json([
             'success' => true,
             'statusCode' => 200,
@@ -46,7 +50,7 @@ class ForgetPasswordController extends ApiController
         if ($validator->fails()) {
             return $this->errorResponse($validator->messages(), 422);
         }
-        $updatedData = DB::table("password_reset_tokens")->where("token", $request->token)->get();
+        $updatedData = DB::table("password_reset_tokens")->where("token", $request->token)->first();
         if(!$updatedData){
             return $this->errorResponse("اطلاعات ارسال شده نادرست است.", 422);
          }
@@ -54,6 +58,11 @@ class ForgetPasswordController extends ApiController
             'password'=>Hash::make($request->password)
         ]);
         DB::table("password_reset_tokens")->where("token", $request->token)->delete();
+        return response()->json([
+            'success' => true,
+            'statusCode' => 200,
+            'message' => ' رمز عبور با موفقیت تغییر کرد.',
+        ], 200);
 
     }
 }

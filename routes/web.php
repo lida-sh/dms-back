@@ -1,5 +1,7 @@
 <?php
 
+use App\Mail\ResetPassword;
+use App\User;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,5 +16,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    $user = User::find(2);
+    
+    $token = DB::table("password_reset_tokens")->where('email', $user->email)->first()->token;
+    return new ResetPassword($token, $user->email);
 });
