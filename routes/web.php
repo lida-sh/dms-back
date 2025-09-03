@@ -3,7 +3,7 @@
 use App\Mail\ResetPassword;
 use App\User;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\V1\FileSearchController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -14,10 +14,5 @@ use Illuminate\Support\Facades\Route;
 | contains the "web" middleware group. Now create something great!
 |
 */
-
-Route::get('/', function () {
-    $user = User::find(2);
-    
-    $token = DB::table("password_reset_tokens")->where('email', $user->email)->first()->token;
-    return new ResetPassword($token, $user->email);
-});
+//FileSearchController
+Route::get('/test', [FileSearchController::class, 'search']);
