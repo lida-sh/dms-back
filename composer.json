@@ -8,7 +8,7 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^7.2.5",
+        "php": "7.4.30",
         "cviebrock/eloquent-sluggable": "^7.0",
         "doctrine/dbal": "^2.13",
         "fideloper/proxy": "^4.2",
@@ -18,8 +18,12 @@
         "laravel/framework": "^7.0",
         "laravel/passport": "^9.4",
         "laravel/tinker": "^2.0",
+        "morilog/jalali": "^3.4",
         "smalot/pdfparser": "^2.12",
-        "spatie/laravel-permission": "^5.3"
+        "spatie/laravel-permission": "^5.3",
+        "spatie/pdf-to-image": "^1.2",
+        "spatie/pdf-to-text": "^1.54",
+        "thiagoalessio/tesseract_ocr": "^2.13"
     },
     "require-dev": {
         "facade/ignition": "^2.0",
