@@ -10,6 +10,7 @@ use App\Http\Controllers\V1\Admin\ApiController;
 use Smalot\PdfParser\Parser;
 use Spatie\PdfToImage\Pdf;
 use thiagoalessio\TesseractOCR\TesseractOCR;
+use parallel\Runtime;
 class FileSearchController3 extends ApiController
 {
     public function searchInPdf(Request $request)
@@ -204,6 +205,163 @@ class FileSearchController3 extends ApiController
             'pages' => $pagesWithKeyword
         ]);
     }
+    public function paraller()
+    {
 
+
+        $keyword = "قاسم";
+        $filePath = str_replace('/', DIRECTORY_SEPARATOR, public_path('storage/files/test.pdf'));
+        $pdftoppm = '"C:\\poppler-25.07.0\\Library\\bin\\pdftoppm.exe"';
+        $pdftotext = '"C:\\poppler-25.07.0\\Library\\bin\\pdftotext.exe"';
+        $pagesWithKeyword = [];
+
+        $parser = new Parser();
+        $pdf = $parser->parseFile($filePath);
+        $totalPages = count($pdf->getPages());
+
+        // تعداد پردازش موازی
+        $parallelLimit = 4;
+        $runtimes = [];
+        for ($i = 0; $i < $parallelLimit; $i++) {
+            $runtimes[] = new Runtime();
+        }
+
+        $tasks = [];
+        $queue = [];
+
+        // مرحله 1: بررسی متن مستقیم
+        for ($page = 1; $page <= $totalPages; $page++) {
+            $text = shell_exec($pdftotext . ' -f ' . $page . ' -l ' . $page . ' -layout -q ' . escapeshellarg($filePath) . ' -');
+            if (!empty(trim($text)) && mb_stripos($text, $keyword) !== false) {
+                $pagesWithKeyword[] = $page;
+            } else {
+                $queue[] = $page; // OCR لازم دارد
+            }
+        }
+
+        // مرحله 2: اجرای OCR به صورت موازی
+        $futureResults = [];
+        foreach ($queue as $index => $page) {
+            $runtime = $runtimes[$index % $parallelLimit];
+            $futureResults[] = $runtime->run(function ($page, $filePath, $pdftoppm, $keyword) {
+                $imagePath = str_replace('/', DIRECTORY_SEPARATOR, __DIR__ . "/storage/files/_$page");
+                $cmd = $pdftoppm . " -f $page -l $page -singlefile -png "
+                    . escapeshellarg($filePath) . " "
+                    . escapeshellarg($imagePath) . " 2>&1";
+                exec($cmd, $output, $return_var);
+                if ($return_var !== 0 || !file_exists($imagePath . ".png")) {
+                    return null;
+                }
+                $ocrText = (new TesseractOCR($imagePath . ".png"))
+                    ->lang('fas')
+                    ->run();
+                unlink($imagePath . ".png");
+                if (mb_stripos($ocrText, $keyword) !== false) {
+                    return $page;
+                }
+                return null;
+            }, [$page, $filePath, $pdftoppm, $keyword]);
+        }
+
+        // جمع‌آوری نتایج OCR
+        foreach ($futureResults as $future) {
+            $res = $future->value();
+            if ($res !== null) {
+                $pagesWithKeyword[] = $res;
+            }
+        }
+
+        sort($pagesWithKeyword);
+
+        return response()->json([
+            'keyword' => $keyword,
+            'pages' => $pagesWithKeyword
+        ]);
+    }
+    public function twostate()
+    {
+        $keyword = "قاسم";
+        $filePath = str_replace('/', DIRECTORY_SEPARATOR, public_path('storage/files/test.pdf'));
+        $pdftoppm = '"C:\\poppler-25.07.0\\Library\\bin\\pdftoppm.exe"';
+        $pdftotext = '"C:\\poppler-25.07.0\\Library\\bin\\pdftotext.exe"';
+        $pagesWithKeyword = [];
+
+        $parser = new Parser();
+        $pdf = $parser->parseFile($filePath);
+        $totalPages = count($pdf->getPages());
+
+        // OCR یک صفحه (تابع مشترک)
+        $ocrFunction = function ($page, $filePath, $pdftoppm, $keyword) {
+            $imagePath = str_replace('/', DIRECTORY_SEPARATOR, public_path("storage/files/_$page"));
+            $cmd = $pdftoppm . " -f $page -l $page -singlefile -png "
+                . escapeshellarg($filePath) . " "
+                . escapeshellarg($imagePath) . " 2>&1";
+            exec($cmd, $output, $return_var);
+
+            if ($return_var !== 0 || !file_exists($imagePath . ".png")) {
+                return null;
+            }
+
+            $ocrText = (new TesseractOCR($imagePath . ".png"))
+                ->lang('fas')
+                ->run();
+
+            unlink($imagePath . ".png");
+
+            if (mb_stripos($ocrText, $keyword) !== false) {
+                return $page;
+            }
+            return null;
+        };
+
+        // مرحله 1: بررسی متن مستقیم
+        $ocrQueue = [];
+        for ($page = 1; $page <= $totalPages; $page++) {
+            $text = shell_exec($pdftotext . ' -f ' . $page . ' -l ' . $page . ' -layout -q ' . escapeshellarg($filePath) . ' -');
+            if (!empty(trim($text)) && mb_stripos($text, $keyword) !== false) {
+                $pagesWithKeyword[] = $page;
+            } else {
+                $ocrQueue[] = $page; // نیاز به OCR
+            }
+        }
+
+        // مرحله 2: OCR → موازی یا عادی
+        if (extension_loaded('parallel')) {
+            // 🔹 حالت موازی
+            $parallelLimit = 4; // تعداد پروسس همزمان
+            $runtimes = [];
+            for ($i = 0; $i < $parallelLimit; $i++) {
+                $runtimes[] = new \parallel\Runtime();
+            }
+
+            $futureResults = [];
+            foreach ($ocrQueue as $index => $page) {
+                $runtime = $runtimes[$index % $parallelLimit];
+                $futureResults[] = $runtime->run($ocrFunction, [$page, $filePath, $pdftoppm, $keyword]);
+            }
+
+            foreach ($futureResults as $future) {
+                $res = $future->value();
+                if ($res !== null) {
+                    $pagesWithKeyword[] = $res;
+                }
+            }
+        } else {
+            // 🔹 حالت عادی (تک‌نخی)
+            foreach ($ocrQueue as $page) {
+                $res = $ocrFunction($page, $filePath, $pdftoppm, $keyword);
+                if ($res !== null) {
+                    $pagesWithKeyword[] = $res;
+                }
+            }
+        }
+
+        sort($pagesWithKeyword);
+
+        return response()->json([
+            'keyword' => $keyword,
+            'pages' => $pagesWithKeyword
+        ]);
+    }
 }
 
