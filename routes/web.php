@@ -4,6 +4,7 @@ use App\Mail\ResetPassword;
 use App\User;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\V1\FileSearchController3;
+use App\Http\Controllers\V1\FileSearchController4;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -15,9 +16,10 @@ use App\Http\Controllers\V1\FileSearchController3;
 |
 */
 //FileSearchController
-Route::get('/test', [FileSearchController3::class, 'searchInPdf']);
+Route::get('/test', [FileSearchController4::class, 'searchPdf']);
+Route::get('/test3', [FileSearchController3::class, 'searchInPdf']);
 Route::get('/test-ocr', [FileSearchController3::class, 'searchOCR']);
-Route::get('/pdf/debug', [FileSearchController3::class, 'debugPage']);
+// Route::get('/pdf/debug', [FileSearchController3::class, 'debugPage']);
 function detectBestEncoding($text)
 {
     // لیست encoding های معتبر و تست شده

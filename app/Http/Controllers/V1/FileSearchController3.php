@@ -181,9 +181,7 @@ class FileSearchController3 extends ApiController
             if ($return_var !== 0 || !file_exists($imagePath . ".png")) {
                 throw new \Exception("Image not created: " . $imagePath . ".png. Output: " . implode("\n", $output));
             }
-            if (!file_exists($imagePath . ".png")) {
-                throw new \Exception("Image not created: " . $imagePath . ".png");
-            }
+            
             $ocrText = (new TesseractOCR($imagePath . ".png"))
                 ->lang('fas') // زبان فارسی
                 ->run();
