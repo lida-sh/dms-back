@@ -11,6 +11,8 @@ use App\Http\Resources\ProcessResource;
 use App\Http\Resources\SubProcessClientResource;
 use App\Procedure;
 use App\Process;
+use App\ProcessFile;
+use App\Services\PdfSearchService;
 use App\SubProcess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -37,8 +39,8 @@ class SearchController extends ApiController
         $itemSearch = $request->input("itemSearch");
         $docType = $request->input("docType");
         // return $request->all();
-        
-        if($itemSearch === "code"){
+
+        if ($itemSearch === "code") {
             switch ($docType) {
                 case "process":
                     $processes = Process::query()->when($architecture_id, function ($query, $architecture_id) {
@@ -142,10 +144,9 @@ class SearchController extends ApiController
                     ], 200);
                 default:
                     return $this->successResponse([], 200);
-    
+
             }
-        }
-        elseif($itemSearch === "title" || $itemSearch == null){
+        } elseif ($itemSearch === "title" || $itemSearch == null) {
             switch ($docType) {
                 case "process":
                     $processes = Process::query()->when($architecture_id, function ($query, $architecture_id) {
@@ -248,12 +249,34 @@ class SearchController extends ApiController
                         "meta" => ProcedureClientResource::collection($procedures)->response()->getData()->meta
                     ], 200);
                 default:
-                    
+
                     return $this->successResponse([], 200);
-    
+
+            }
+        } elseif ($itemSearch === "files") {
+            switch ($docType) {
+                case "process":
+                    $files = ProcessFile::whereHas('process', function ($query, $architecture_id) {
+                        $query->where('architecture_id', $architecture_id);
+                    })->where('fileName', 'like', '%.pdf')->with('process:id,name')->get();
+                    $fileSearch = new PdfSearchService();
+                    $result = $fileSearch->searchFilesByArchitecture($files, $wordSearch);
+
+                    return response()->json($result);
+                    
+                case "subProcess":
+                case "procedure":
+                case "instruction":
+                case "contract":
+                case "form":
+                case "regulation":
+                default:
+                    return $this->successResponse([], 200);
+
+
             }
         }
-        
+
     }
     public function doSearch(Request $request)
     {
