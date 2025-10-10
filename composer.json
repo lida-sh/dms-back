@@ -1,0 +1,69 @@
+{
+    "name": "laravel/laravel",
+    "type": "project",
+    "description": "The Laravel Framework.",
+    "keywords": [
+        "framework",
+        "laravel"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": "^8.1",
+        "doctrine/dbal": "3.6",
+        "guzzlehttp/guzzle": "^7.9",
+        "hekmatinasser/verta": "^8.4",
+        "laravel/framework": "^10.0",
+        "laravel/passport": "12",
+        "laravel/tinker": "^2.0",
+        "spatie/laravel-permission": "^5.5",
+        "morilog/jalali": "^3.4",
+        "smalot/pdfparser": "^2.12",
+        "spatie/pdf-to-image": "^1.2",
+        "spatie/pdf-to-text": "^1.54",
+        "thiagoalessio/tesseract_ocr": "^2.13"
+    },
+    "require-dev": {
+        "mockery/mockery": "^1.4",
+        "nunomaduro/collision": "^7.0",
+        "phpunit/phpunit": "^9.6",
+        "spatie/laravel-ignition": "^2.9"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        },
+        "classmap": [
+            "database/seeds",
+            "database/factories"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "scripts": {
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi"
+        ]
+    }
+}
