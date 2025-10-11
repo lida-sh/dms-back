@@ -5,7 +5,6 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Schema;
-use Laravel\Passport\Passport;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -30,9 +29,7 @@ class AppServiceProvider extends ServiceProvider
         validator::extend('bpm', function ($attribute, $value, $parameters, $validator) {
             return $value->getClientOriginalExtension() === 'bpm';
         });
-        Passport::routes();
-        Passport::tokensExpireIn(now()->addHours(1));
-        Passport::refreshTokensExpireIn(now()->addHours(5));
+        
        
        
 

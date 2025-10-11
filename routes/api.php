@@ -60,7 +60,13 @@ Route::post('/refresh', [AuthController::class, 'refreshToken']);
 Route::post('/forget-password', [ForgetPasswordController::class, 'forgetPassword']);
 Route::post('/reset-password', [ForgetPasswordController::class, 'resetPassword']);
 
-
+// Route::post('/oauth/token', [AccessTokenController::class, 'issueToken'])->name('passport.token');
+// Route::get('/oauth/authorize', [AuthorizationController::class, 'authorize'])->name('passport.authorizations.authorize');
+// Route::post('/oauth/authorize', [ApproveAuthorizationController::class, 'approve'])->name('passport.authorizations.approve');
+// Route::delete('/oauth/authorize', [DenyAuthorizationController::class, 'deny'])->name('passport.authorizations.deny');
+// Route::post('/oauth/personal-access-tokens', [PersonalAccessTokenController::class, 'store'])->name('passport.personal.tokens.store');
+// Route::get('/oauth/personal-access-tokens', [PersonalAccessTokenController::class, 'forUser'])->name('passport.personal.tokens.index');
+// Route::delete('/oauth/personal-access-tokens/{token_id}', [PersonalAccessTokenController::class, 'destroy'])->name('passport.personal.tokens.destroy');
 
 Route::get('/architectures', [SearchController::class, 'getArchitectures']);
 Route::get("/architectures/{architecture}/processes", [SearchController::class, 'getProcessesOfArchitecture']);

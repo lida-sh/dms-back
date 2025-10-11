@@ -36,7 +36,7 @@ class AuthController extends ApiController
                 //     'Content-Type' => 'application/json',  // اضافه کردن هدر
                 // ]
             // ]);
-            $response = Http::post('http://dms.test/oauth/token', [
+            $response = Http::post('http://dms-back.test/oauth/token', [
                     'grant_type' => 'password',
                     'client_id' => $request->client_id,
                     'client_secret' => $request->client_secret,
@@ -70,7 +70,7 @@ class AuthController extends ApiController
     public function refreshToken(Request $request): JsonResponse
     {
         
-        $response = Http::asForm()->post('http://dms.test/oauth/token', [
+        $response = Http::asForm()->post('http://dms-back.test/oauth/token', [
             'grant_type' => 'refresh_token',
             'refresh_token' => $request->refresh_token,
             'client_id' => env('PASSPORT_PASSWORD_CLIENT_ID'),
