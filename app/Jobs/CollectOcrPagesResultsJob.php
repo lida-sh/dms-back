@@ -17,9 +17,10 @@ class CollectOcrPagesResultsJob implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($filePath)
+    public function __construct($files, $keyword)
     {
-        $this->filePath = $filePath;
+        $this->files = $files;
+        $this->keyword = $keyword;
     }
 
     /**
@@ -29,22 +30,23 @@ class CollectOcrPagesResultsJob implements ShouldQueue
      */
     public function handle()
     {
-        $key = "ocr_result_" . md5($this->filePath);
-        $pages = Cache::get($key, []);
+        $results = [];
 
-        // اینجا می‌تونی مثلا جمع عددی صفحات یا لیست صفحات را در DB ذخیره کنی
-        $sum = array_sum($pages);
+        foreach ($this->files as $file) {
+            $filePath = public_path('storage/files/processes' . $file->path);
 
-        // نمونه: ذخیره در جدول results
-        \DB::table('ocr_results')->insert([
-            'file_path' => $this->filePath,
-            'pages_sum' => $sum,
-            'pages' => json_encode($pages),
-            'created_at' => now(),
-        ]);
+            $ocrKey   = 'ocr_pages_'   . md5($filePath); // OCR صفحات تصویری
+            $textKey  = 'text_pages_'  . md5($filePath); // صفحات متنی معمولی
 
-        // حذف cache موقت
-        Cache::forget($key);
+            // ---- خواندن صفحات OCR ----
+            if (config('cache.default') === 'redis') {
+                $ocrPages = Redis::smembers($ocrKey);
+                Redis::del($ocrKey);
+            } else {
+                $ocrPages = Cache::get($ocrKey, []);
+                Cache::forget($ocrKey);
+            }
+
         
     }
 }
