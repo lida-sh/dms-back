@@ -18,7 +18,7 @@ use \V1\Admin\ProcessController;
 use \V1\Admin\UserController;
 use \V1\Admin\RoleController;
 use \V1\Admin\PermissionController;
-
+use App\Http\Controllers\Auth\AccessTokenController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -59,7 +59,8 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/refresh', [AuthController::class, 'refreshToken']);
 Route::post('/forget-password', [ForgetPasswordController::class, 'forgetPassword']);
 Route::post('/reset-password', [ForgetPasswordController::class, 'resetPassword']);
-
+Route::post('/oauth/token', [AccessTokenController::class, 'issueToken'])
+    ->middleware('throttle:10,1');
 // Route::post('/oauth/token', [AccessTokenController::class, 'issueToken'])->name('passport.token');
 // Route::get('/oauth/authorize', [AuthorizationController::class, 'authorize'])->name('passport.authorizations.authorize');
 // Route::post('/oauth/authorize', [ApproveAuthorizationController::class, 'approve'])->name('passport.authorizations.approve');

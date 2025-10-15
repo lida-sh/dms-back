@@ -16,9 +16,9 @@ use Illuminate\Http\JsonResponse;
 
 class AuthController extends ApiController
 {
-    
+
     public function login(Request $request)
-    {   
+    {
         // dd($request->all());
         $validator = Validator::make($request->all(), [
             'username' => 'required|email',
@@ -31,20 +31,20 @@ class AuthController extends ApiController
         if (Auth::attempt(['email' => $request->username, 'password' => $request->password])) {
             $user = Auth::user();
             // $client = new Client([
-                // 'verify' => false, // غیرفعال کردن بررسی گواهی SSL
-                // 'headers' => [
-                //     'Content-Type' => 'application/json',  // اضافه کردن هدر
-                // ]
+            // 'verify' => false, // غیرفعال کردن بررسی گواهی SSL
+            // 'headers' => [
+            //     'Content-Type' => 'application/json',  // اضافه کردن هدر
+            // ]
             // ]);
-            $response = Http::post('http://dms-back.test/oauth/token', [
-                    'grant_type' => 'password',
-                    'client_id' => $request->client_id,
-                    'client_secret' => $request->client_secret,
-                    'username' => $request->username,
-                    'password' => $request->password,
-                    'scope' => ''
+            $response = Http::asForm()->post('http://dms-back.test/oauth/token', [
+                'grant_type' => 'password',
+                'client_id' => $request->client_id,
+                'client_secret' => $request->client_secret,
+                'username' => $request->username,
+                'password' => $request->password,
+                'scope' => ''
             ]);
-            
+
             // $user['token'] = $response->getBody();
             $body = $response->getBody();
             $data = json_decode($body, true); // تبدیل به آرایه
@@ -65,11 +65,11 @@ class AuthController extends ApiController
             //     'errors' => 'نام کاربری یا رمز عبور اشتباه است.',
             // ], 401);
         }
-        
+
     }
     public function refreshToken(Request $request): JsonResponse
     {
-        
+
         $response = Http::asForm()->post('http://dms-back.test/oauth/token', [
             'grant_type' => 'refresh_token',
             'refresh_token' => $request->refresh_token,
@@ -78,7 +78,7 @@ class AuthController extends ApiController
             'scope' => '',
         ]);
         $body = $response->getBody();
-        
+
         $data = json_decode($body, true);
 
         return response()->json([
@@ -90,8 +90,8 @@ class AuthController extends ApiController
     }
     public function logout(): JsonResponse
     {
-        
-    
+
+
         Auth::user()->tokens()->delete();
 
         return response()->json([

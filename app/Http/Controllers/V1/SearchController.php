@@ -254,27 +254,34 @@ class SearchController extends ApiController
 
             }
         } elseif ($itemSearch === "files") {
+             
             switch ($docType) {
                 case "process":
-                    $files = ProcessFile::whereHas('process', function ($query, $architecture_id) {
+                    $files = ProcessFile::whereHas('process', function ($query) use($architecture_id) {
                         $query->where('architecture_id', $architecture_id);
-                    })->where('fileName', 'like', '%.pdf')->with('process:id,name')->get();
+                    })->where('fileName', 'like', '%.pdf')->with('process:id,title')->get();
                     $fileSearch = new PdfSearchService();
                     $result = $fileSearch->searchFilesByArchitecture($files, $wordSearch);
-
-                    return response()->json($result);
-                    
+                    // dd($docType);
+                    break;
                 case "subProcess":
+                    break;
                 case "procedure":
+                    break;
                 case "instruction":
+                    break;
                 case "contract":
+                    break;
                 case "form":
+                    break;
                 case "regulation":
+                    break;
                 default:
-                    return $this->successResponse([], 200);
+                    break;
 
 
             }
+            return response()->json($result);
         }
 
     }
