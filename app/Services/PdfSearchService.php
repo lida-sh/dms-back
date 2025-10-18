@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Services;
+use Psy\Readline\Hoa\Console;
 use Smalot\PdfParser\Parser;
 use Spatie\PdfToImage\Pdf;
 use thiagoalessio\TesseractOCR\TesseractOCR;
@@ -13,9 +14,10 @@ use Throwable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use App\Jobs\SearchPdfFileJob;
-
+use Illuminate\Bus\Batchable;
 class PdfSearchService
 {
+    use Batchable;
     // public function searchPdf($filePath, $keyword)
     // {
     //     // $keyword = "قاسم";
@@ -87,7 +89,7 @@ class PdfSearchService
 
         $allJobs = [];
         $results = [];
-
+        $haspic = [];
         // برای هر فایل
         foreach ($files as $file) {
             $filePath = public_path('storage/files/processes/' . $file->filePath);
@@ -106,13 +108,63 @@ class PdfSearchService
             $totalPages = count($pdf->getPages());
             $pagesWithKeyword = [];
             $ocrQueue = [];
+            $pdfimages = '"C:\\poppler-25.07.0\\Library\\bin\\pdfimages.exe"';
+            $imagesList = shell_exec($pdfimages . ' -list ' . escapeshellarg($filePath));
+
+            // هر خط از اطلاعات تصاویر شامل page، num، width، height و type است
+            $lines = preg_split('/\r\n|\r|\n/', trim($imagesList));
+
+            // حذف هدر و خطوط خالی
+            $images = [];
+            foreach ($lines as $line) {
+                if (preg_match('/^\s*(\d+)\s+(\d+)\s+(\w+)\s+(\d+)\s+(\d+)/', $line, $m)) {
+                    $page = (int) $m[1];
+                    $width = (int) $m[4];
+                    $height = (int) $m[5];
+                    $images[$page][] = ['width' => $width, 'height' => $height];
+                }
+            }
+            // شمارش ابعاد تکراری
+            $allSizes = [];
+            foreach ($images as $pageImages) {
+                foreach ($pageImages as $img) {
+                    $key = $img['width'] . 'x' . $img['height'];
+                    $allSizes[$key] = ($allSizes[$key] ?? 0) + 1;
+                }
+            }
+
+            // اندازه‌هایی که در بیش از نصف صفحات تکرار شدن رو ثابت در نظر بگیر
+            $logoSizes = [];
+            $totalPages = count($pdf->getPages());
+            foreach ($allSizes as $size => $count) {
+                if ($count >= ($totalPages / 2)) {
+                    $logoSizes[] = $size;
+                }
+            }
+
             for ($page = 1; $page <= $totalPages; $page++) {
                 $text = shell_exec($pdftotext . ' -f ' . $page . ' -l ' . $page . ' -layout -q ' . escapeshellarg($filePath) . ' -');
+                $pageHasRealImage = false;
+                if (isset($images[$page])) {
+                    foreach ($images[$page] as $img) {
+                        $sizeKey = $img['width'] . 'x' . $img['height'];
+                        if (!in_array($sizeKey, $logoSizes)) {
+                            // تصویر غیرتکراری در صفحه وجود دارد
+                            $pageHasRealImage = true;
+                            break;
+                        }
+                    }
+                }
+                // $pdfimages = '"C:\\poppler-25.07.0\\Library\\bin\\pdfimages.exe"';
+                // $imageInfo = shell_exec($pdfimages . ' -f ' . $page . ' -l ' . $page . ' -list ' . escapeshellarg($filePath));
+                // $hasImages = preg_match('/^\s*\d+/m', trim($imageInfo));
                 if (!empty(trim($text)) && mb_stripos($text, $keyword) !== false) {
                     $pagesWithKeyword[] = $page;
-                } else {
+                } elseif ($pageHasRealImage && empty(trim($text))) {
+                    // صفحه تصویر غیرتکراری دارد و متنی ندارد ⇒ OCR لازم دارد
                     $ocrQueue[] = $page;
                 }
+                
             }
 
             // ذخیره موقت صفحات دارای متن
@@ -132,12 +184,12 @@ class PdfSearchService
                 'status' => count($ocrQueue) ? 'OCR pending' : 'complete',
             ];
         }
-         // مرحله 3: اجرای همه صفحات OCR در یک Batch
+        // مرحله 3: اجرای همه صفحات OCR در یک Batch
         if (count($allJobs)) {
             Bus::batch($allJobs)
                 ->then(function (Batch $batch) use ($keyword) {
                     // بعد از تمام شدن OCR همه فایل‌ها
-                    CollectOcrPagesResultsJob::dispatch($keyword);
+                    CollectOcrPagesResultsJob::dispatch($keyword)->onConnection(queueConnection());
                 })
                 ->catch(function (Batch $batch, Throwable $e) {
                     Log::error('Batch failed: ' . $e->getMessage());
@@ -145,7 +197,7 @@ class PdfSearchService
                 ->finally(function (Batch $batch) {
                     Log::info('Batch OCR finished.');
                 })
-                ->onQueue('ocr')
+                ->onQueue('ocr')->onConnection(queueConnection())
                 ->dispatch();
         }
 
@@ -153,9 +205,9 @@ class PdfSearchService
         return response()->json([
             'keyword' => $keyword,
             'results' => $results,
-            'status' => count($allJobs) ? 'processing' : 'complete',
+            'status' => count($allJobs) ? 'processing ' . count($allJobs) . ' jobs' : 'complete',
         ]);
-        
+
 
     }
 

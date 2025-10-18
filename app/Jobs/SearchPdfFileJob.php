@@ -10,9 +10,10 @@ use Illuminate\Queue\SerializesModels;
 use App\Services\PdfSearchService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Bus\Batchable;
 class SearchPdfFileJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
     protected $file;
     protected $keyword;
     /**
