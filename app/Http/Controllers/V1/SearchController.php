@@ -260,7 +260,6 @@ class SearchController extends ApiController
                     $files = ProcessFile::whereHas('process', function ($query) use($architecture_id) {
                         $query->where('architecture_id', $architecture_id);
                     })->where('fileName', 'like', '%.pdf')->with('process:id,title')->get();
-                    
                     $fileSearch = new PdfSearchService();
                     $result = $fileSearch->searchFilesByArchitecture($files, $wordSearch);
                     

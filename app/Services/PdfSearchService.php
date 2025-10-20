@@ -89,7 +89,6 @@ class PdfSearchService
 
         $allJobs = [];
         $results = [];
-        $haspic = [];
         // برای هر فایل
         foreach ($files as $file) {
             $filePath = public_path('storage/files/processes/' . $file->filePath);
@@ -143,7 +142,12 @@ class PdfSearchService
             }
 
             for ($page = 1; $page <= $totalPages; $page++) {
-                $text = shell_exec($pdftotext . ' -f ' . $page . ' -l ' . $page . ' -layout -q ' . escapeshellarg($filePath) . ' -');
+                $text = shell_exec($pdftotext .
+                    ' -f ' . $page .
+                    ' -l ' . $page .
+                    ' -layout -q ' .
+                    escapeshellarg($filePath) . ' -');
+                // $text = shell_exec($pdftotext . ' -f ' . $page . ' -l ' . $page . ' -layout -q ' . escapeshellarg($filePath) . ' -');
                 $pageHasRealImage = false;
                 if (isset($images[$page])) {
                     foreach ($images[$page] as $img) {
@@ -160,11 +164,11 @@ class PdfSearchService
                 // $hasImages = preg_match('/^\s*\d+/m', trim($imageInfo));
                 if (!empty(trim($text)) && mb_stripos($text, $keyword) !== false) {
                     $pagesWithKeyword[] = $page;
-                } elseif ($pageHasRealImage && empty(trim($text))) {
+                } elseif ($pageHasRealImage) {
                     // صفحه تصویر غیرتکراری دارد و متنی ندارد ⇒ OCR لازم دارد
                     $ocrQueue[] = $page;
                 }
-                
+
             }
 
             // ذخیره موقت صفحات دارای متن
@@ -187,9 +191,12 @@ class PdfSearchService
         // مرحله 3: اجرای همه صفحات OCR در یک Batch
         if (count($allJobs)) {
             Bus::batch($allJobs)
-                ->then(function (Batch $batch) use ($keyword) {
+                ->then(function (Batch $batch) use ($keyword, $files) {
                     // بعد از تمام شدن OCR همه فایل‌ها
-                    CollectOcrPagesResultsJob::dispatch($keyword)->onConnection(queueConnection());
+                    Log::info('✅ All OCR jobs completed. Dispatching collector job...');
+                    CollectOcrPagesResultsJob::dispatch($files, $keyword)
+                        ->onConnection(queueConnection())
+                        ->onQueue('ocr2');
                 })
                 ->catch(function (Batch $batch, Throwable $e) {
                     Log::error('Batch failed: ' . $e->getMessage());
@@ -197,7 +204,7 @@ class PdfSearchService
                 ->finally(function (Batch $batch) {
                     Log::info('Batch OCR finished.');
                 })
-                ->onQueue('ocr')->onConnection(queueConnection())
+                ->onQueue('ocr2')->onConnection(queueConnection())
                 ->dispatch();
         }
 

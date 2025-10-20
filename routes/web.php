@@ -16,6 +16,17 @@ use App\Http\Controllers\V1\FileSearchController4;
 |
 */
 //FileSearchController
+Route::get('/test-soketi', function () {
+    $host = env('PUSHER_HOST', '127.0.0.1');
+    $port = env('PUSHER_PORT', 6001);
+    $connected = @fsockopen($host, $port, $errno, $errstr, 1);
+    if ($connected) {
+        fclose($connected);
+        return "✅ Laravel can connect to Soketi at {$host}:{$port}";
+    } else {
+        return "❌ Laravel cannot connect to Soketi at {$host}:{$port} — $errstr ($errno)";
+    }
+});
 Route::get('/test', [FileSearchController4::class, 'searchPdf']);
 Route::get('/test3', [FileSearchController3::class, 'searchInPdf']);
 Route::get('/test-ocr', [FileSearchController3::class, 'searchOCR']);
