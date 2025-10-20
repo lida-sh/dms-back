@@ -36,7 +36,11 @@ class AuthController extends ApiController
             //     'Content-Type' => 'application/json',  // اضافه کردن هدر
             // ]
             // ]);
-            $response = Http::asForm()->post('http://dms-back.test/oauth/token', [
+            putenv('HTTP_PROXY');
+putenv('http_proxy');
+putenv('HTTPS_PROXY');
+putenv('https_proxy');
+            $response = Http::asForm()->post(config('app.url').'/oauth/token', [
                 'grant_type' => 'password',
                 'client_id' => $request->client_id,
                 'client_secret' => $request->client_secret,

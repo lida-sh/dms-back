@@ -35,6 +35,7 @@ class OcrPdfPageJob implements ShouldQueue
      */
     public function handle()
     {
+      try {
         $key = 'ocr_pages_' . md5($this->filePath);
         $imagePath = str_replace('/', DIRECTORY_SEPARATOR, public_path("storage/files/_$this->page"));
 
@@ -53,11 +54,13 @@ class OcrPdfPageJob implements ShouldQueue
 
         unlink($imagePath . ".png");
 
-        if (mb_stripos($ocrText, $this->keyword) !== false) {
-            $pages = Cache::get($key, []);
-            $pages[] = $this->page;
+        if (!empty($ocrText) && mb_stripos($ocrText, $this->keyword) !== false) {
+            Redis::sadd($key, $this->page);            // add page to set
+            Redis::expire($key, 60 * 60);              // expire 1 hour
+            // $pages = Cache::get($key, []);
+            // $pages[] = $this->page;
 
-            Cache::put($key, $pages, now()->addHours(1));
+            // Cache::put($key, $pages, now()->addHours(1));
             // ذخیره در Redis یا DB
             // \Cache::connection('redis')->sadd("pdf:ocr:results", $this->page);
             //     OcrTempResult::create([
@@ -67,5 +70,8 @@ class OcrPdfPageJob implements ShouldQueue
             // ]);
         }
 
-    }
+    }catch (\Throwable $e) {
+            Log::error("OcrPdfPageJob failed for {$this->filePath} page {$this->page}: " . $e->getMessage());
+        }
+}
 }

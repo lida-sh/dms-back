@@ -30,7 +30,7 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
     'passport' => [
-        'login_endpoint' => env('PASSPORT_LOGIN_ENDPOINT', 'http://dms-back.test/oauth/token'),
+        'login_endpoint' => env('PASSPORT_LOGIN_ENDPOINT', env('APP_URL').'/oauth/token'),
         'client_id' => env('PASSPORT_CLIENT_ID'),
         'client_secret' => env('PASSPORT_CLIENT_SECRET'),
     ],
