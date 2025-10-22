@@ -22,4 +22,11 @@ Broadcast::channel('ocr-results', function () {
 Broadcast::channel('test-channel', function () {
     return true;
 });
+Broadcast::channel('test-ocr-channel', function ($user) {
+    return true; // دسترسی عمومی برای تست
+});
+
+Broadcast::channel('private-ocr.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});
 
