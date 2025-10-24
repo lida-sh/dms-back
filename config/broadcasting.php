@@ -29,7 +29,6 @@ return [
     */
 
     'connections' => [
-
         'reverb' => [
             'driver' => 'reverb',
             'app_id' => env('REVERB_APP_ID'),
