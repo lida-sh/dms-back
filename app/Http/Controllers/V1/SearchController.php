@@ -262,7 +262,7 @@ class SearchController extends ApiController
                     })->where('fileName', 'like', '%.pdf')->with('process:id,title')->get();
                     $fileSearch = new PdfSearchService();
                     $result = $fileSearch->searchFilesByArchitecture($files, $wordSearch);
-                    // dd($docType);
+                    
                     break;
                 case "subProcess":
                     break;

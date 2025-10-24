@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Jobs;
-
+use App\Events\OcrCompleted;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -59,8 +59,9 @@ class CollectOcrPagesResultsJob implements ShouldQueue
             ];
             $finalKey = 'ocr_final_result_' . md5($this->keyword);
             Cache::put($finalKey, $results, now()->addMinutes(60));
-
-            Log::info('✅ CollectOcrPagesResultsJob completed for keyword: ' . $this->keyword);
+            
+            info('📢 OCR Results before event:', $results);
+            event(new OcrCompleted($this->keyword, $results));
 
         }
     }

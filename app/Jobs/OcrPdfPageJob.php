@@ -8,9 +8,10 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use thiagoalessio\TesseractOCR\TesseractOCR;
+use Illuminate\Bus\Batchable;
 class OcrPdfPageJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
     protected $page;
     protected $filePath;
     protected $pdftoppm;

@@ -37,9 +37,9 @@ class AuthController extends ApiController
             // ]
             // ]);
             putenv('HTTP_PROXY');
-putenv('http_proxy');
-putenv('HTTPS_PROXY');
-putenv('https_proxy');
+            putenv('http_proxy');
+            putenv('HTTPS_PROXY');
+            putenv('https_proxy');
             $response = Http::asForm()->post(config('app.url').'/oauth/token', [
                 'grant_type' => 'password',
                 'client_id' => $request->client_id,
