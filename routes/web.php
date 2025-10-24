@@ -3,7 +3,15 @@
 use App\Mail\ResetPassword;
 use App\User;
 use Illuminate\Support\Facades\Route;
+<<<<<<< HEAD
 
+=======
+use App\Http\Controllers\V1\FileSearchController3;
+use App\Http\Controllers\V1\FileSearchController4;
+use App\Events\TestOcrEvent;
+use App\Events\TestBroadcast;
+use Illuminate\Support\Facades\Cache;
+>>>>>>> 873a1e90d14db84a497bd8087330c6a47e18d704
 /*
 |--------------------------------------------------------------------------
 | Web Routes

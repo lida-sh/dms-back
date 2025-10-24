@@ -11,7 +11,7 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Support\Facades\Log;
-class TestBroadcast2 implements ShouldBroadcastNow
+class TestBroadcast2 implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -19,10 +19,14 @@ class TestBroadcast2 implements ShouldBroadcastNow
      * Create a new event instance.
      */
     public $message;
+    public $data;
+    public $userId;
 
-    public function __construct($message)
+    public function __construct($message, $data = [], $userId = null)
     {
         $this->message = $message;
+        $this->data = $data;
+        $this->userId = $userId;
         Log::info('✏️ TestBroadcast constructed with message: '.$message);
     }
     /**
@@ -38,5 +42,14 @@ class TestBroadcast2 implements ShouldBroadcastNow
      public function broadcastAs(): string
     {
         return 'test.event';
+    }
+    public function broadcastWith()
+    {
+        return [
+            'message' => $this->message,
+            'data' => $this->data,
+            'timestamp' => now()->toDateTimeString(),
+            'user_id' => $this->userId
+        ];
     }
 }
