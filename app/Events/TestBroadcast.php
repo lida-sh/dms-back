@@ -21,7 +21,7 @@ class TestBroadcast implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
-        Log::info('📢 Broadcasting TestBroadcast event on test-channelلیدا');
+        Log::info('📢 Broadcasting TestBroadcast event on test-channelل');
         return [new Channel('test-channel')];
     }
 

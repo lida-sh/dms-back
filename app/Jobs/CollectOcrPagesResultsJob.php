@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 class CollectOcrPagesResultsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
     protected $files;
     protected $keyword;
     /**
@@ -24,6 +25,8 @@ class CollectOcrPagesResultsJob implements ShouldQueue
     {
         $this->files = $files;
         $this->keyword = $keyword;
+        $this->onConnection('database');
+        $this->onQueue('ocr');
     }
 
     /**
@@ -53,16 +56,17 @@ class CollectOcrPagesResultsJob implements ShouldQueue
             Cache::forget($textKey);
             $results[] = [
                 'file_name' => $file->file_name,
-                'process_name' => $file->process_name ?? null,
+                'process_name' => $file->process->title ?? null,
                 'found_in_text' => array_map('intval', $textPages),
                 'found_in_images' => array_map('intval', $ocrPages),
             ];
-            $finalKey = 'ocr_final_result_' . md5($this->keyword);
-            Cache::put($finalKey, $results, now()->addMinutes(60));
-            
-            info('📢 OCR Results before event:', $results);
-            event(new OcrCompleted($this->keyword, $results));
 
         }
+        $finalKey = 'ocr_final_result_' . md5($this->keyword);
+        Cache::put($finalKey, $results, now()->addMinutes(60));
+
+        info('📢 OCR Results before event:hadid', $results);
+        event(new OcrCompleted($this->keyword, $results));
+
     }
 }

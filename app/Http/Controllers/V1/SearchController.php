@@ -261,6 +261,7 @@ class SearchController extends ApiController
                         $query->where('architecture_id', $architecture_id);
                     })->where('fileName', 'like', '%.pdf')->with('process:id,title')->get();
                     $fileSearch = new PdfSearchService();
+                    
                     $result = $fileSearch->searchFilesByArchitecture($files, $wordSearch);
                     
                     break;

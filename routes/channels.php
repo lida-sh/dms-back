@@ -16,17 +16,17 @@ use Illuminate\Support\Facades\Broadcast;
 // Broadcast::channel('App.User.{id}', function ($user, $id) {
 //     return (int) $user->id === (int) $id;
 // });
-// Broadcast::channel('ocr-results', function () {
-//     return true;
-// });
+Broadcast::channel('ocr-results', function () {
+    return true;
+});
 Broadcast::channel('test-channel', function () {
     return true;
 });
-Broadcast::channel('test-ocr-channel', function ($user) {
-    return true; // دسترسی عمومی برای تست
-});
+// Broadcast::channel('test-ocr-channel', function ($user) {
+//     return true; // دسترسی عمومی برای تست
+// });
 
-Broadcast::channel('private-ocr.{userId}', function ($user, $userId) {
-    return (int) $user->id === (int) $userId;
-});
+// Broadcast::channel('private-ocr.{userId}', function ($user, $userId) {
+//     return (int) $user->id === (int) $userId;
+// });
 

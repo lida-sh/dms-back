@@ -15,7 +15,7 @@
         "hekmatinasser/verta": "^8.4",
         "laravel/framework": "^10.0",
         "laravel/passport": "^12.4",
-        "laravel/reverb": "^1.5",
+        "laravel/reverb": "^1.6",
         "laravel/tinker": "^2.0",
         "morilog/jalali": "^3.4",
         "predis/predis": "^3.2",

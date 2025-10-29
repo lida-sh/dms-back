@@ -9,6 +9,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     event(new \App\Events\TestBroadcast('Hello Reverb!'));
-    return 'Laravel is working!';
+    return 'Laravel is working!!!!!!!!!!!!!';
 });
 

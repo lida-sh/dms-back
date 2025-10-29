@@ -166,7 +166,7 @@ return [
         /*
          * Package Service Providers...
          */
-
+        Laravel\Reverb\ReverbServiceProvider::class,
         /*
          * Application Service Providers...
          */

@@ -9,9 +9,12 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use thiagoalessio\TesseractOCR\TesseractOCR;
 use Illuminate\Bus\Batchable;
+use Illuminate\Support\Facades\Log;
+
 class OcrPdfPageJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
+  
     protected $page;
     protected $filePath;
     protected $pdftoppm;
@@ -27,6 +30,8 @@ class OcrPdfPageJob implements ShouldQueue
         $this->filePath = $filePath;
         $this->pdftoppm = $pdftoppm;
         $this->keyword = $keyword;
+        $this->onConnection('database');
+        $this->onQueue('ocr');
     }
 
     /**
@@ -36,43 +41,45 @@ class OcrPdfPageJob implements ShouldQueue
      */
     public function handle()
     {
-      try {
-        $key = 'ocr_pages_' . md5($this->filePath);
-        $imagePath = str_replace('/', DIRECTORY_SEPARATOR, public_path("storage/files/_$this->page"));
+        Log::info("▶️ Running OCR job for page {$this->page} (Batch: " . optional($this->batch())->id . ")");
+        try {
+            $key = 'ocr_pages_' . md5($this->filePath);
+            $imagePath = str_replace('/', DIRECTORY_SEPARATOR, public_path("storage/files/_$this->page"));
 
-        $cmd = $this->pdftoppm . " -f {$this->page} -l {$this->page} -singlefile -png "
-            . escapeshellarg($this->filePath) . " "
-            . escapeshellarg($imagePath) . " 2>&1";
+            $cmd = $this->pdftoppm . " -f {$this->page} -l {$this->page} -singlefile -png "
+                . escapeshellarg($this->filePath) . " "
+                . escapeshellarg($imagePath) . " 2>&1";
 
-        exec($cmd, $output, $return_var);
-        if ($return_var !== 0 || !file_exists($imagePath . ".png")) {
-            return; // خطا → صفحه رد میشه
-        }
+            exec($cmd, $output, $return_var);
+            if ($return_var !== 0 || !file_exists($imagePath . ".png")) {
+                return; // خطا → صفحه رد میشه
+            }
 
-        $ocrText = (new TesseractOCR($imagePath . ".png"))
-            ->lang('fas')
-            ->run();
+            $ocrText = (new TesseractOCR($imagePath . ".png"))
+                ->lang('fas')
+                ->run();
 
-        unlink($imagePath . ".png");
+            unlink($imagePath . ".png");
 
-        if (!empty($ocrText) && mb_stripos($ocrText, $this->keyword) !== false) {
-            Redis::sadd($key, $this->page);            // add page to set
-            Redis::expire($key, 60 * 60);              // expire 1 hour
-            // $pages = Cache::get($key, []);
-            // $pages[] = $this->page;
+            if (!empty($ocrText) && mb_stripos($ocrText, $this->keyword) !== false) {
+                // Redis::sadd($key, $this->page);            // add page to set
+                // Redis::expire($key, 60 * 60);              // expire 1 hour
+                $pages = Cache::get($key, []);
+                $pages[] = $this->page;
 
-            // Cache::put($key, $pages, now()->addHours(1));
-            // ذخیره در Redis یا DB
-            // \Cache::connection('redis')->sadd("pdf:ocr:results", $this->page);
-            //     OcrTempResult::create([
-            //     'file_id' => $this->fileId,
-            //     'page_number' => $this->page,
+                Cache::put($key, $pages, now()->addHours(1));
 
-            // ]);
-        }
+                // ذخیره در Redis یا DB
+                // \Cache::connection('redis')->sadd("pdf:ocr:results", $this->page);
+                //     OcrTempResult::create([
+                //     'file_id' => $this->fileId,
+                //     'page_number' => $this->page,
 
-    }catch (\Throwable $e) {
+                // ]);
+            }
+            Log::info('Batch page job finished.');
+        } catch (\Throwable $e) {
             Log::error("OcrPdfPageJob failed for {$this->filePath} page {$this->page}: " . $e->getMessage());
         }
-}
+    }
 }

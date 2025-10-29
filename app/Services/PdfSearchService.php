@@ -18,9 +18,14 @@ use Illuminate\Bus\Batchable;
 class PdfSearchService
 {
     use Batchable;
+    protected function isLastBatch()
+    {
+        // مثلاً اگر تمام فایل‌ها پردازش شدند
+        return cache()->get('ocr_remaining_batches', 0) === 0;
+    }
     public function searchFilesByArchitecture($files, $keyword)
     {
-        
+        Log::info('test');
         $pdftoppm = '"C:\\poppler-25.07.0\\Library\\bin\\pdftoppm.exe"';
         $pdftotext = '"C:\\poppler-25.07.0\\Library\\bin\\pdftotext.exe"';
 
@@ -28,13 +33,13 @@ class PdfSearchService
         $results = [];
         // برای هر فایل
         foreach ($files as $file) {
-            $filePath = public_path('storage/files/processes' . $file->filePath);
+            $filePath = public_path('storage/files/processes/' . $file->filePath);
 
             if (!file_exists($filePath)) {
                 $results[] = [
                     'file_name' => $file->file_name,
                     'process_name' => $file->process_name,
-                    'error' => 'File not found',
+                    'error' => $filePath,
                 ];
                 continue;
             }
@@ -109,40 +114,65 @@ class PdfSearchService
             }
 
             // ذخیره موقت صفحات دارای متن
-            $key = "ocr_result_" . md5($filePath);
-            Cache::put($key, ['text' => $pagesWithKeyword, 'image' => []], now()->addMinutes(60));
+            $key = "text_pages_" . md5($filePath);
+            Cache::put($key, $pagesWithKeyword, now()->addMinutes(60));
 
             // مرحله 2: افزودن صفحات نیازمند OCR به لیست Job کلی
             foreach ($ocrQueue as $page) {
-                $allJobs[] = new OcrPdfPageJob($page, $filePath, $pdftoppm, $keyword);
+                $job = new OcrPdfPageJob($page, $filePath, $pdftoppm, $keyword);
+                $job->onConnection('database');
+                $job->onQueue('ocr');
+                $allJobs[] = $job;
+
+                // $allJobs[] = (new OcrPdfPageJob($page, $filePath, $pdftoppm, $keyword));
             }
+
+            // foreach ($allJobs as $job) {
+            //     Log::info('Job queue: ' . ($job->queue ?? 'null'));
+            // }
 
             // برای نمایش سریع به فرانت
             $results[] = [
                 'file_name' => $file->fileName,
-                'process_name' => $file->process_name,
+                'process_name' => $file->process->title,
                 'found_in_text' => $pagesWithKeyword,
                 'status' => count($ocrQueue) ? 'OCR pending' : 'complete',
             ];
         }
+        foreach ($allJobs as $index => $job) {
+            $queueName = property_exists($job, 'queue') ? $job->queue : 'not-set';
+            $connectionName = property_exists($job, 'connection') ? $job->connection : 'not-set';
+            Log::info("🔍 Job #{$index} => Queue: {$queueName}, Connection: {$connectionName}, Class: " . get_class($job));
+        }
+        Log::info('Queue config before dispatch: ', [
+            'connection' => config('queue.default'),
+            'driver' => config('queue.connections.' . config('queue.default')),
+        ]);
         // مرحله 3: اجرای همه صفحات OCR در یک Batch
         if (count($allJobs)) {
+            Log::info('all job is ', $allJobs);
             Bus::batch($allJobs)
                 ->then(function (Batch $batch) use ($keyword, $files) {
                     // بعد از تمام شدن OCR همه فایل‌ها
-                    Log::info('✅ All OCR jobs completed. Dispatching collector job...');
-                    CollectOcrPagesResultsJob::dispatch($files, $keyword)
-                        ->onConnection(queueConnection())
-                        ->onQueue('ocr2');
+                    Log::info('✅ then() called for batch: ' . $batch->id);
+                    // Log::info('✅ All OCR jobs completed. Dispatching collector job...');
+                    CollectOcrPagesResultsJob::dispatch($files, $keyword)->onQueue('ocr')->onConnection('database');
+                    // if ($this->isLastBatch()) { // ← شرط کن که فقط یکبار اجرا شود
+                    //     Log::info('✅ All OCR jobs completed. Dispatching collector job...تست chain');
+                    //     CollectOcrPagesResultsJob::dispatch($files, $keyword)
+                    //         ->onQueue('ocr')
+                    //         ->onConnection('database');
+                    // }
                 })
                 ->catch(function (Batch $batch, Throwable $e) {
                     Log::error('Batch failed: ' . $e->getMessage());
                 })
                 ->finally(function (Batch $batch) {
                     Log::info('Batch OCR finished.');
-                })
-                ->onQueue('ocr2')->onConnection(queueConnection())
+                })->onQueue('ocr')
+                ->onConnection('database')
                 ->dispatch();
+            ;
         }
 
         // مرحله 4: پاسخ اولیه به فرانت
