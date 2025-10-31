@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Jobs;
+
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Log;
 class OcrPdfPageJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
-  
+
     protected $page;
     protected $filePath;
     protected $pdftoppm;
@@ -57,6 +58,8 @@ class OcrPdfPageJob implements ShouldQueue
 
             $ocrText = (new TesseractOCR($imagePath . ".png"))
                 ->lang('fas')
+                ->psm(6)
+                ->oem(1)
                 ->run();
 
             unlink($imagePath . ".png");

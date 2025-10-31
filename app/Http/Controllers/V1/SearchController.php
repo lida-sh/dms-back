@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\V1\Admin\ApiController;
 use App\Http\Resources\ProcedureClientResource;
 use App\Http\Resources\ProcessClientResource;
+use App\Http\Resources\ProcessFileSearchResult;
 use App\Http\Resources\ProcessResource;
 use App\Http\Resources\SubProcessClientResource;
 use App\Procedure;
@@ -18,6 +19,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+
 class SearchController extends ApiController
 {
     public function getArchitectures()
@@ -33,6 +36,9 @@ class SearchController extends ApiController
     }
     public function doAdvancedSearch(Request $request)
     {
+
+
+
         $wordSearch = $request->input("wordSearch");
         $architecture_id = $request->input("architecture_id");
         $process_id = $request->input("process_id");
@@ -144,7 +150,6 @@ class SearchController extends ApiController
                     ], 200);
                 default:
                     return $this->successResponse([], 200);
-
             }
         } elseif ($itemSearch === "title" || $itemSearch == null) {
             switch ($docType) {
@@ -251,19 +256,52 @@ class SearchController extends ApiController
                 default:
 
                     return $this->successResponse([], 200);
-
             }
         } elseif ($itemSearch === "files") {
-             
+            $searchId = (string) Str::uuid();
+            Cache::put("search:$searchId", [
+                'keyword' => $wordSearch,
+                'status' => 'pending',
+                'progress' => 0,
+                'results' => [],
+            ], now()->addMinutes(20));
             switch ($docType) {
                 case "process":
-                    $files = ProcessFile::whereHas('process', function ($query) use($architecture_id) {
+                    $files = ProcessFile::whereHas('process', function ($query) use ($architecture_id) {
                         $query->where('architecture_id', $architecture_id);
                     })->where('fileName', 'like', '%.pdf')->with('process:id,title')->get();
                     $fileSearch = new PdfSearchService();
-                    
-                    $result = $fileSearch->searchFilesByArchitecture($files, $wordSearch);
-                    
+
+                    $results = $fileSearch->searchFilesByArchitecture($files, $wordSearch, 'processes', $searchId);
+                    $perPage = 10;
+                    $page = 1;
+
+                    $collection = collect($results['results'])->map(function ($item) {
+                        return (object) $item;
+                    });
+                    $total = $collection->count();
+
+                    $paginated = new LengthAwarePaginator(
+                        $collection->forPage($page, $perPage)->values(),
+                        $total,
+                        $perPage,
+                        $page,
+                        ['path' => request()->url(), 'query' => request()->query()]
+                    );
+                    return $this->successResponse([
+                        "searchId" => $searchId,
+                        "keyword" => $wordSearch,
+                        "status" => $results['status'],
+                        "files" => ProcessFileSearchResult::collection($paginated),
+                        "links" => ProcessFileSearchResult::collection($paginated)->response()->getData()->links,
+                        "meta" => ProcessFileSearchResult::collection($paginated)->response()->getData()->meta
+                    ], 200);
+                    // return response()->json([
+                    //     'searchId' => $searchId,
+                    //     'keyword' => $wordSearch,
+                    //     'results' => ProcessFileSearchResult::collection($paginated),
+
+                    // ]);
                     break;
                 case "subProcess":
                     break;
@@ -279,12 +317,8 @@ class SearchController extends ApiController
                     break;
                 default:
                     break;
-
-
             }
-            return response()->json($result);
         }
-
     }
     public function doSearch(Request $request)
     {
@@ -504,7 +538,7 @@ class SearchController extends ApiController
                     'meta' => $allData['meta'],
                     'links' => $allData['links'],
                 ], 200);
-            // return $this->successResponse([], 200);
+                // return $this->successResponse([], 200);
 
         }
     }

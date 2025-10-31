@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Services;
+
 use Psy\Readline\Hoa\Console;
 use Smalot\PdfParser\Parser;
 use Spatie\PdfToImage\Pdf;
@@ -15,31 +16,32 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use App\Jobs\SearchPdfFileJob;
 use Illuminate\Bus\Batchable;
+
 class PdfSearchService
 {
     use Batchable;
-    protected function isLastBatch()
+
+    public function searchFilesByArchitecture($files, $keyword, $dirPath, $searchId)
     {
-        // مثلاً اگر تمام فایل‌ها پردازش شدند
-        return cache()->get('ocr_remaining_batches', 0) === 0;
-    }
-    public function searchFilesByArchitecture($files, $keyword)
-    {
-        Log::info('test');
+
         $pdftoppm = '"C:\\poppler-25.07.0\\Library\\bin\\pdftoppm.exe"';
         $pdftotext = '"C:\\poppler-25.07.0\\Library\\bin\\pdftotext.exe"';
 
         $allJobs = [];
         $results = [];
+        // $failedResults = [];
+
         // برای هر فایل
         foreach ($files as $file) {
-            $filePath = public_path('storage/files/processes/' . $file->filePath);
-
+            $filePath = public_path('storage/files/' . $dirPath .'/'. $file->filePath);
+            Log::info("filePath:".$filePath);
             if (!file_exists($filePath)) {
                 $results[] = [
                     'file_name' => $file->file_name,
+                    'file_path'=> $filePath,
                     'process_name' => $file->process_name,
-                    'error' => $filePath,
+                    'found_in_text' => null,
+                    'status' => 'file not found',
                 ];
                 continue;
             }
@@ -110,7 +112,6 @@ class PdfSearchService
                     // صفحه تصویر غیرتکراری دارد و متنی ندارد ⇒ OCR لازم دارد
                     $ocrQueue[] = $page;
                 }
-
             }
 
             // ذخیره موقت صفحات دارای متن
@@ -127,17 +128,16 @@ class PdfSearchService
                 // $allJobs[] = (new OcrPdfPageJob($page, $filePath, $pdftoppm, $keyword));
             }
 
-            // foreach ($allJobs as $job) {
-            //     Log::info('Job queue: ' . ($job->queue ?? 'null'));
-            // }
-
             // برای نمایش سریع به فرانت
-            $results[] = [
-                'file_name' => $file->fileName,
-                'process_name' => $file->process->title,
-                'found_in_text' => $pagesWithKeyword,
-                'status' => count($ocrQueue) ? 'OCR pending' : 'complete',
-            ];
+            // if (count($pagesWithKeyword)) {
+                $results[] = [
+                    'file_name' => $file->fileName,
+                    'file_path'=> $filePath,
+                    'process_name' => $file->process->title,
+                    'found_in_text' => $pagesWithKeyword,
+                    'status' => count($ocrQueue) ? 'OCR pending' : 'complete',
+                ];
+            // }
         }
         foreach ($allJobs as $index => $job) {
             $queueName = property_exists($job, 'queue') ? $job->queue : 'not-set';
@@ -171,15 +171,13 @@ class PdfSearchService
                     Log::info('Batch OCR finished.');
                 })->onQueue('ocr')
                 ->onConnection('database')
-                ->dispatch();
-            ;
+                ->dispatch();;
         }
 
         // مرحله 4: پاسخ اولیه به فرانت
-        return response()->json([
-            'keyword' => $keyword,
+        return [
             'results' => $results,
             'status' => count($allJobs) ? 'processing ' . count($allJobs) . ' jobs' : 'complete',
-        ]);
+        ];
     }
 }

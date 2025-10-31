@@ -66,7 +66,8 @@ class CollectOcrPagesResultsJob implements ShouldQueue
         Cache::put($finalKey, $results, now()->addMinutes(60));
 
         info('📢 OCR Results before event:hadid', $results);
-        event(new OcrCompleted($this->keyword, $results));
+        
+        // event(new OcrCompleted($this->keyword, $results));
 
     }
 }
