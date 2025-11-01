@@ -39,7 +39,7 @@ class PdfSearchService
                 $results[] = [
                     'file_name' => $file->file_name,
                     'file_path'=> $filePath,
-                    'process_name' => $file->process_name,
+                    'doc_name' => $file->process->title,
                     'found_in_text' => null,
                     'status' => 'file not found',
                 ];
@@ -133,7 +133,9 @@ class PdfSearchService
                 $results[] = [
                     'file_name' => $file->fileName,
                     'file_path'=> $filePath,
-                    'process_name' => $file->process->title,
+                    'doc_name' => $file->process->title,
+                    'architecture_name' => $file->process->architecture->title,
+                    'code' => $file->process->code,
                     'found_in_text' => $pagesWithKeyword,
                     'status' => count($ocrQueue) ? 'OCR pending' : 'complete',
                 ];

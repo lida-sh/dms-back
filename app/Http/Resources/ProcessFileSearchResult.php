@@ -17,7 +17,9 @@ class ProcessFileSearchResult extends JsonResource
         return [
             'file_name' => $this->file_name ?? null,
             'file_path' => $this->file_path ?? null,
-            'process_name' => $this->process_name ?? null,
+            'doc_name' => $this->doc_name ?? null,
+            'architecture_name' => $this->architecture_name ?? null,
+            'code' => $this->code ?? null,
             'found_in_text' => $this->found_in_text ?? [],
             'found_in_images' => $this->found_in_images ?? [],
             'status' => $this->status ?? 'unknown',

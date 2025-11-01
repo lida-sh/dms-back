@@ -291,17 +291,13 @@ class SearchController extends ApiController
                     return $this->successResponse([
                         "searchId" => $searchId,
                         "keyword" => $wordSearch,
+                        "typeDoc"=> "فرایند",
                         "status" => $results['status'],
                         "files" => ProcessFileSearchResult::collection($paginated),
                         "links" => ProcessFileSearchResult::collection($paginated)->response()->getData()->links,
                         "meta" => ProcessFileSearchResult::collection($paginated)->response()->getData()->meta
                     ], 200);
-                    // return response()->json([
-                    //     'searchId' => $searchId,
-                    //     'keyword' => $wordSearch,
-                    //     'results' => ProcessFileSearchResult::collection($paginated),
-
-                    // ]);
+                    
                     break;
                 case "subProcess":
                     break;
