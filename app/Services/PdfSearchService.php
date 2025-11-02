@@ -132,7 +132,8 @@ class PdfSearchService
             // if (count($pagesWithKeyword)) {
                 $results[] = [
                     'file_name' => $file->fileName,
-                    'file_path'=> $filePath,
+                    // 'file_path'=> url('storage/files/' . $dirPath .'/'. $file->filePath),
+                    'file_path'=> $file->filePath,
                     'doc_name' => $file->process->title,
                     'architecture_name' => $file->process->architecture->title,
                     'code' => $file->process->code,

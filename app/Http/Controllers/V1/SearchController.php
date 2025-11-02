@@ -269,7 +269,12 @@ class SearchController extends ApiController
                 case "process":
                     $files = ProcessFile::whereHas('process', function ($query) use ($architecture_id) {
                         $query->where('architecture_id', $architecture_id);
-                    })->where('fileName', 'like', '%.pdf')->with('process:id,title')->get();
+                    })->where('fileName', 'like', '%.pdf')->with([
+                                'process' => function ($query) {
+                                    $query->select('id', 'title', 'architecture_id', 'code')
+                                        ->with('architecture:id,title');
+                                }
+                            ])->get();
                     $fileSearch = new PdfSearchService();
 
                     $results = $fileSearch->searchFilesByArchitecture($files, $wordSearch, 'processes', $searchId);
@@ -291,13 +296,13 @@ class SearchController extends ApiController
                     return $this->successResponse([
                         "searchId" => $searchId,
                         "keyword" => $wordSearch,
-                        "typeDoc"=> "فرایند",
+                        "typeDoc" => "فرایند",
                         "status" => $results['status'],
                         "files" => ProcessFileSearchResult::collection($paginated),
                         "links" => ProcessFileSearchResult::collection($paginated)->response()->getData()->links,
                         "meta" => ProcessFileSearchResult::collection($paginated)->response()->getData()->meta
                     ], 200);
-                    
+
                     break;
                 case "subProcess":
                     break;
@@ -534,7 +539,7 @@ class SearchController extends ApiController
                     'meta' => $allData['meta'],
                     'links' => $allData['links'],
                 ], 200);
-                // return $this->successResponse([], 200);
+            // return $this->successResponse([], 200);
 
         }
     }

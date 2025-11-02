@@ -80,3 +80,4 @@ Route::get('/procedures-details/{slug}', [ProcedureClientController::class, "sho
 Route::get('/sub-processes-details/{slug}', [SubProcessClientController::class, "showBySlug"]);
 Route::get('/processes-details/{slug}', [ProcessClientController::class, "showBySlug"]);
 Route::get('/architectures/{slug}', [ArchitectureClientController::class, "getTreeStructure"]);
+
