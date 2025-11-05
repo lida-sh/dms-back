@@ -13,7 +13,7 @@ use App\Http\Resources\SubProcessClientResource;
 use App\Procedure;
 use App\Process;
 use App\ProcessFile;
-use App\Services\PdfSearchService;
+use App\Services\PdfSearchService2;
 use App\SubProcess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -275,7 +275,7 @@ class SearchController extends ApiController
                                         ->with('architecture:id,title');
                                 }
                             ])->get();
-                    $fileSearch = new PdfSearchService();
+                    $fileSearch = new PdfSearchService2();
 
                     $results = $fileSearch->searchFilesByArchitecture($files, $wordSearch, 'processes', $searchId);
                     $perPage = 10;
