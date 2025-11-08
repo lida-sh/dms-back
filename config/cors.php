@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'public/storage/*'],
+    'paths' => ['api/*', 'public/storage/*', 'pdf/*'],
 
     'allowed_methods' => ['*'],
 
@@ -27,8 +27,8 @@ return [
 
     'exposed_headers' => false,
 
-    'max_age' => false,
+    'max_age' => 0,
 
-    'supports_credentials' => true,
+    'supports_credentials' => false,
 
 ];
