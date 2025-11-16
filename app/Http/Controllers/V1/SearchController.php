@@ -13,7 +13,7 @@ use App\Http\Resources\SubProcessClientResource;
 use App\Procedure;
 use App\Process;
 use App\ProcessFile;
-use App\Services\PdfSearchService;
+use App\Services\PdfSearchService3;
 use App\SubProcess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -259,7 +259,7 @@ class SearchController extends ApiController
             }
         } elseif ($itemSearch === "files") {
             $searchId = (string) Str::uuid();
-            Cache::put("search:$searchId", [
+            Cache::put("search_{$searchId}", [
                 'keyword' => $wordSearch,
                 'status' => 'pending',
                 'progress' => 0,
@@ -275,7 +275,7 @@ class SearchController extends ApiController
                                         ->with('architecture:id,title');
                                 }
                             ])->get();
-                    $fileSearch = new PdfSearchService();
+                    $fileSearch = new PdfSearchService3();
 
                     $results = $fileSearch->searchFilesByArchitecture($files, $wordSearch, 'processes', $searchId);
                     $perPage = 10;

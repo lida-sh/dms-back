@@ -34,7 +34,7 @@ class PdfSearchService3
         // برای هر فایل
         foreach ($files as $file) {
             $filePath = public_path('storage/files/' . $dirPath . '/' . $file->filePath);
-            Log::info("filePath:" . $filePath);
+            // Log::info("filePath:" . $filePath);
             if (!file_exists($filePath)) {
                 $results[] = [
                     'file_name' => $file->file_name,
@@ -147,24 +147,24 @@ class PdfSearchService3
             ];
             // }
         }
-        foreach ($allJobs as $index => $job) {
-            $queueName = property_exists($job, 'queue') ? $job->queue : 'not-set';
-            $connectionName = property_exists($job, 'connection') ? $job->connection : 'not-set';
-            Log::info("🔍 Job #{$index} => Queue: {$queueName}, Connection: {$connectionName}, Class: " . get_class($job));
-        }
-        Log::info('Queue config before dispatch: ', [
-            'connection' => config('queue.default'),
-            'driver' => config('queue.connections.' . config('queue.default')),
-        ]);
+        // foreach ($allJobs as $index => $job) {
+        //     $queueName = property_exists($job, 'queue') ? $job->queue : 'not-set';
+        //     $connectionName = property_exists($job, 'connection') ? $job->connection : 'not-set';
+        //     // Log::info("🔍 Job #{$index} => Queue: {$queueName}, Connection: {$connectionName}, Class: " . get_class($job));
+        // }
+        // Log::info('Queue config before dispatch: ', [
+        //     'connection' => config('queue.default'),
+        //     'driver' => config('queue.connections.' . config('queue.default')),
+        // ]);
         // مرحله 3: اجرای همه صفحات OCR در یک Batch
         if (count($allJobs)) {
             Log::info('all job is ', $allJobs);
             Bus::batch($allJobs)
-                ->then(function (Batch $batch) use ($keyword, $files) {
+                ->then(function (Batch $batch) use ($keyword, $files, $searchId) {
                     // بعد از تمام شدن OCR همه فایل‌ها
                     Log::info('✅ then() called for batch: ' . $batch->id);
                     // Log::info('✅ All OCR jobs completed. Dispatching collector job...');
-                    CollectOcrPagesResultsJob3::dispatch($files, $keyword)->onQueue('ocr')->onConnection('database');
+                    CollectOcrPagesResultsJob3::dispatch($files, $keyword, $searchId)->onQueue('ocr')->onConnection('database');
                     // if ($this->isLastBatch()) { // ← شرط کن که فقط یکبار اجرا شود
                     //     Log::info('✅ All OCR jobs completed. Dispatching collector job...تست chain');
                     //     CollectOcrPagesResultsJob::dispatch($files, $keyword)

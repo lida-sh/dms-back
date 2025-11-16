@@ -10,21 +10,25 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Log;
+use App\Http\Resources\ProcessFileSearchResult;
+use Illuminate\Pagination\LengthAwarePaginator;
 class CollectOcrPagesResultsJob3 implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $files;
     protected $keyword;
+    protected $searchId;
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($files, $keyword)
+    public function __construct($files, $keyword, $searchId)
     {
         $this->files = $files;
         $this->keyword = $keyword;
+        $this->$searchId = $searchId;
         $this->onConnection('database');
         $this->onQueue('ocr');
     }
@@ -37,7 +41,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
     public function handle()
     {
         $results = [];
-
+         info('📢 شروع جمع کردن نتایج');
         foreach ($this->files as $file) {
             $filePath = public_path('storage/files/processes/' . $file->filePath);
 
@@ -76,7 +80,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
                     $allPositions[] = $pos;
                 }
             }
-            usort($allPositions, function($a, $b) {
+            usort($allPositions, function ($a, $b) {
                 if ($a['page'] === $b['page']) {
                     return $a['position'] - $b['position'];
                 }
@@ -91,15 +95,42 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
                 'positions' => $allPositions, // تمام موقعیت‌های دقیق
                 'total_matches' => count($allPositions)
             ];
-            
+
 
         }
+        $perPage = 10;
+        $page = 1;
+
+        $collection = collect($results[])->map(fn($item) => (object) $item);
+
+        $total = $collection->count();
+
+        $paginated = new LengthAwarePaginator(
+            $collection->forPage($page, $perPage)->values(),
+            $total,
+            $perPage,
+            $page,
+            ['path' => '', 'query' => []]
+        );
+
+        $responseData = [
+            "searchId" => $this->searchId,
+            "keyword" => $this->keyword,
+            "typeDoc" => "فرایند",
+            "status" => 'complete',
+            "files" => ProcessFileSearchResult::collection($paginated),
+            "links" => ProcessFileSearchResult::collection($paginated)->response()->getData()->links,
+            "meta" => ProcessFileSearchResult::collection($paginated)->response()->getData()->meta
+        ];
+
+        // 🚀 ارسال به فرانت
+        // broadcast(new SearchCompletedEvent($responseData));
         $finalKey = 'ocr_final_result_' . md5($this->keyword);
         Cache::put($finalKey, $results, now()->addMinutes(60));
 
-        info('📢 OCR Results before event:hadid', $results);
-        
-        event(new OcrCompleted($this->keyword, $results));
+        info('📢 OCR Results before event:jadid', $results);
+
+        event(new OcrCompleted($responseData));
 
     }
 }

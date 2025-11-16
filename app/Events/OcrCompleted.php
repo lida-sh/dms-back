@@ -13,14 +13,14 @@ use Illuminate\Queue\SerializesModels;
 class OcrCompleted implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-    public $keyword;
+    
     public $results;
     /**
      * Create a new event instance.
      */
-    public function __construct($keyword, $results)
+    public function __construct($results)
     {
-        $this->keyword = $keyword;
+       
         $this->results = $results;
     }
 
@@ -48,10 +48,11 @@ class OcrCompleted implements ShouldBroadcast
     }
     public function broadcastWith()
     {
+        
         return [
-            'keyword' => $this->keyword,
-            'results' => $this->results,
-            'timestamp' => now()->toISOString()
+            $this->results
+            // 'results' => $this->results,
+            // 'timestamp' => now()->toISOString()
         ];
     }
 }
