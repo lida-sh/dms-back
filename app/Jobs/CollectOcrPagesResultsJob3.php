@@ -16,7 +16,9 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $files;
+    // protected $files;
+    protected $fileData;
+
     protected $keyword;
     protected $searchId;
     /**
@@ -24,11 +26,12 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($files, $keyword, $searchId)
+    public function __construct($fileData, $keyword, $searchId)
     {
-        $this->files = $files;
+        // $this->files = $files;
+        $this->fileData = $fileData;
         $this->keyword = $keyword;
-        $this->$searchId = $searchId;
+        $this->searchId = $searchId;
         $this->onConnection('database');
         $this->onQueue('ocr');
     }
@@ -41,9 +44,14 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
     public function handle()
     {
         $results = [];
-         info('📢 شروع جمع کردن نتایج');
-        foreach ($this->files as $file) {
-            $filePath = public_path('storage/files/processes/' . $file->filePath);
+        info('📢 شروع جمع کردن نتایج');
+        foreach ($this->fileData as $file) {
+            $fileName = $file['file_name'];
+            $filePath = $file['file_path'];
+            $docName = $file['doc_name'];
+            $architectureName = $file['architecture_name'];
+            $code = $file['code'];
+            // $filePath = public_path('storage/files/processes/' . $file->filePath);
 
             $ocrKey = 'ocr_pages_' . md5($filePath); // OCR صفحات تصویری
             $textKey = 'text_pages_' . md5($filePath); // صفحات متنی معمولی
@@ -87,9 +95,11 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
                 return $a['page'] - $b['page'];
             });
             $results[] = [
-                'file_name' => $file->file_name,
-                'file_path' => $file->filePath,
-                'process_name' => $file->process->title ?? null,
+                'file_name' =>  $fileName,
+                'file_path' =>  $filePath,
+                'process_name' => $docName ?? null,
+                'code' => $code ?? null,
+                'architecture_name' => $architectureName ?? null,
                 'found_in_text' => array_map('intval', $textPages),
                 'found_in_images' => array_map('intval', $ocrPages),
                 'positions' => $allPositions, // تمام موقعیت‌های دقیق
@@ -101,7 +111,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
         $perPage = 10;
         $page = 1;
 
-        $collection = collect($results[])->map(fn($item) => (object) $item);
+        $collection = collect($results)->map(fn($item) => (object) $item);
 
         $total = $collection->count();
 
@@ -112,23 +122,25 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
             $page,
             ['path' => '', 'query' => []]
         );
+        $resource = ProcessFileSearchResult::collection($paginated)->response()->getData(true);
 
         $responseData = [
             "searchId" => $this->searchId,
             "keyword" => $this->keyword,
             "typeDoc" => "فرایند",
             "status" => 'complete',
-            "files" => ProcessFileSearchResult::collection($paginated),
-            "links" => ProcessFileSearchResult::collection($paginated)->response()->getData()->links,
-            "meta" => ProcessFileSearchResult::collection($paginated)->response()->getData()->meta
+            "files" => $resource['data'],
+            "links" => $resource['links'],
+            "meta" => $resource['meta']
         ];
+
 
         // 🚀 ارسال به فرانت
         // broadcast(new SearchCompletedEvent($responseData));
         $finalKey = 'ocr_final_result_' . md5($this->keyword);
         Cache::put($finalKey, $results, now()->addMinutes(60));
 
-        info('📢 OCR Results before event:jadid', $results);
+        info('📢 OCR Results before event:jadid');
 
         event(new OcrCompleted($responseData));
 

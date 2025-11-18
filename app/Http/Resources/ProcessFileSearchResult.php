@@ -22,6 +22,7 @@ class ProcessFileSearchResult extends JsonResource
             'code' => $this->code ?? null,
             'found_in_text' => $this->found_in_text ?? [],
             'text_positions' => $this->text_positions ?? [],
+            'positions' => $this->positions ?? [],
             'found_in_images' => $this->found_in_images ?? [],
             'status' => $this->status ?? 'unknown',
         ];

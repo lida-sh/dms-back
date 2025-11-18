@@ -37,7 +37,7 @@ class PdfSearchService3
             // Log::info("filePath:" . $filePath);
             if (!file_exists($filePath)) {
                 $results[] = [
-                    'file_name' => $file->file_name,
+                    'file_name' => $file->fileName,
                     'file_path' => $filePath,
                     'doc_name' => $file->process->title,
                     'found_in_text' => null,
@@ -158,19 +158,24 @@ class PdfSearchService3
         // ]);
         // مرحله 3: اجرای همه صفحات OCR در یک Batch
         if (count($allJobs)) {
+            $fileData = $files->map(function ($file) {
+                return [
+                    'id' => $file->id,
+                    'file_name' => $file->fileName,
+                    'file_path' => $file->filePath,
+                    'doc_name' => $file->process->title,
+                    'architecture_name' => $file->process->architecture->title,
+                    'code' => $file->process->code,
+                ];
+            })->toArray();
             Log::info('all job is ', $allJobs);
             Bus::batch($allJobs)
-                ->then(function (Batch $batch) use ($keyword, $files, $searchId) {
+                ->then(function (Batch $batch) use ($keyword,  $fileData, $searchId) {
                     // بعد از تمام شدن OCR همه فایل‌ها
                     Log::info('✅ then() called for batch: ' . $batch->id);
-                    // Log::info('✅ All OCR jobs completed. Dispatching collector job...');
-                    CollectOcrPagesResultsJob3::dispatch($files, $keyword, $searchId)->onQueue('ocr')->onConnection('database');
-                    // if ($this->isLastBatch()) { // ← شرط کن که فقط یکبار اجرا شود
-                    //     Log::info('✅ All OCR jobs completed. Dispatching collector job...تست chain');
-                    //     CollectOcrPagesResultsJob::dispatch($files, $keyword)
-                    //         ->onQueue('ocr')
-                    //         ->onConnection('database');
-                    // }
+
+                    CollectOcrPagesResultsJob3::dispatch($fileData, $keyword, $searchId)->onQueue('ocr')->onConnection('database');
+
                 })
                 ->catch(function (Batch $batch, Throwable $e) {
                     Log::error('Batch failed: ' . $e->getMessage());
@@ -179,7 +184,8 @@ class PdfSearchService3
                     Log::info('Batch OCR finished.');
                 })->onQueue('ocr')
                 ->onConnection('database')
-                ->dispatch();;
+                ->dispatch();
+            ;
         }
 
         // مرحله 4: پاسخ اولیه به فرانت
@@ -189,34 +195,34 @@ class PdfSearchService3
         ];
     }
     private function findKeywordPositions($text, $keyword, $page)
-{
-    $positions = [];
-    $offset = 0;
-    $keyword = mb_strtolower($keyword);
-    $textLower = mb_strtolower($text);
-    
-    while (($pos = mb_stripos($textLower, $keyword, $offset)) !== false) {
-        // محاسبه خط و موقعیت نسبی
-        $textBefore = mb_substr($text, 0, $pos);
-        $linesBefore = explode("\n", $textBefore);
-        $lineNumber = count($linesBefore);
-        $column = mb_strlen(end($linesBefore)) + 1;
-        // استخراج متن اطراف برای context
-        $startContext = max(0, $pos - 50);
-        $endContext = min(mb_strlen($text), $pos + mb_strlen($keyword) + 50);
-        $context = mb_substr($text, $startContext, $endContext - $startContext);
-        
-        $positions[] = [
-            'page' => $page,
-            'position' => $pos,
-            'line' => $lineNumber,
-            'column' => $column,
-            'context' => $context,
-            'length' => mb_strlen($keyword)
-        ];
-        $offset = $pos + mb_strlen($keyword);
+    {
+        $positions = [];
+        $offset = 0;
+        $keyword = mb_strtolower($keyword);
+        $textLower = mb_strtolower($text);
+
+        while (($pos = mb_stripos($textLower, $keyword, $offset)) !== false) {
+            // محاسبه خط و موقعیت نسبی
+            $textBefore = mb_substr($text, 0, $pos);
+            $linesBefore = explode("\n", $textBefore);
+            $lineNumber = count($linesBefore);
+            $column = mb_strlen(end($linesBefore)) + 1;
+            // استخراج متن اطراف برای context
+            $startContext = max(0, $pos - 50);
+            $endContext = min(mb_strlen($text), $pos + mb_strlen($keyword) + 50);
+            $context = mb_substr($text, $startContext, $endContext - $startContext);
+
+            $positions[] = [
+                'page' => $page,
+                'position' => $pos,
+                'line' => $lineNumber,
+                'column' => $column,
+                'context' => $context,
+                'length' => mb_strlen($keyword)
+            ];
+            $offset = $pos + mb_strlen($keyword);
+        }
+
+        return $positions;
     }
-    
-    return $positions;
-}
 }

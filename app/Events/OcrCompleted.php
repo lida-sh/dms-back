@@ -49,10 +49,6 @@ class OcrCompleted implements ShouldBroadcast
     public function broadcastWith()
     {
         
-        return [
-            $this->results
-            // 'results' => $this->results,
-            // 'timestamp' => now()->toISOString()
-        ];
+        return [$this->results];
     }
 }
