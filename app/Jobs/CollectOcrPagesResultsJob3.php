@@ -18,6 +18,8 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
 
     // protected $files;
     protected $fileData;
+    protected $pagesWithKeyword;
+    protected $textPositions;
 
     protected $keyword;
     protected $searchId;
@@ -26,9 +28,10 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($fileData, $keyword, $searchId)
+    public function __construct($fileData, $keyword, $searchId, $pagesWithKeyword, $textPositions)
     {
-        // $this->files = $files;
+        $this->pagesWithKeyword = $pagesWithKeyword;
+        $this->textPositions = $textPositions;
         $this->fileData = $fileData;
         $this->keyword = $keyword;
         $this->searchId = $searchId;
@@ -71,6 +74,8 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
 
             // ---- خواندن صفحات متنی ----
             $textPages = Cache::get($textKey, []);
+            Log::info("GET KEY: $textKey", ['path' => $filePath]);
+            Log::info('✅textPages:  ', $textPages);
             $textPositions = Cache::get($textPositionKey, []);
             Cache::forget($textKey);
             Cache::forget($textPositionKey);
@@ -94,19 +99,19 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
                 }
                 return $a['page'] - $b['page'];
             });
-            $results[] = [
-                'file_name' =>  $fileName,
-                'file_path' =>  $filePath,
-                'process_name' => $docName ?? null,
-                'code' => $code ?? null,
-                'architecture_name' => $architectureName ?? null,
-                'found_in_text' => array_map('intval', $textPages),
-                'found_in_images' => array_map('intval', $ocrPages),
-                'positions' => $allPositions, // تمام موقعیت‌های دقیق
-                'total_matches' => count($allPositions)
-            ];
-
-
+            if (count($textPages) || count($ocrPages)) {
+                $results[] = [
+                    'file_name' => $fileName,
+                    'file_path' => $filePath,
+                    'doc_name' => $docName ?? null,
+                    'code' => $code ?? null,
+                    'architecture_name' => $architectureName ?? null,
+                    'found_in_text' => array_map('intval', $textPages),
+                    'found_in_images' => array_map('intval', $ocrPages),
+                    'positions' => $allPositions, // تمام موقعیت‌های دقیق
+                    'total_matches' => count($allPositions)
+                ];
+            }
         }
         $perPage = 10;
         $page = 1;
@@ -128,7 +133,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
             "searchId" => $this->searchId,
             "keyword" => $this->keyword,
             "typeDoc" => "فرایند",
-            "status" => 'complete',
+            "status" => 'کامل',
             "files" => $resource['data'],
             "links" => $resource['links'],
             "meta" => $resource['meta']
@@ -137,10 +142,10 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
 
         // 🚀 ارسال به فرانت
         // broadcast(new SearchCompletedEvent($responseData));
-        $finalKey = 'ocr_final_result_' . md5($this->keyword);
-        Cache::put($finalKey, $results, now()->addMinutes(60));
+        // $finalKey = 'ocr_final_result_' . md5($this->keyword);
+        // Cache::put($finalKey, $results, now()->addMinutes(60));
 
-        info('📢 OCR Results before event:jadid');
+        // info('📢 OCR Results before event:jadid');
 
         event(new OcrCompleted($responseData));
 

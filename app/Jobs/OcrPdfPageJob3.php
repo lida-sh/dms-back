@@ -42,7 +42,7 @@ class OcrPdfPageJob3 implements ShouldQueue
      */
     public function handle()
     {
-        Log::info("▶️ Running OCR job for page {$this->page} (Batch: " . optional($this->batch())->id . ")");
+        // Log::info("▶️ Running OCR job for page {$this->page} (Batch: " . optional($this->batch())->id . ")");
         try {
             $key = 'ocr_pages_' . md5($this->filePath);
             $imagePath = str_replace('/', DIRECTORY_SEPARATOR, public_path("storage/files/_$this->page"));
@@ -88,7 +88,7 @@ class OcrPdfPageJob3 implements ShouldQueue
 
                 // ]);
             }
-            Log::info('Batch page job finished.');
+            
         } catch (\Throwable $e) {
             Log::error("OcrPdfPageJob failed for {$this->filePath} page {$this->page}: " . $e->getMessage());
         }

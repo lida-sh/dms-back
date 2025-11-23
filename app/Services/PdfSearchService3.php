@@ -116,9 +116,10 @@ class PdfSearchService3
                     $ocrQueue[] = $page;
                 }
             }
-            $textKey = "text_pages_" . md5($filePath);
-            $positionKey = "text_positions_" . md5($filePath);
+            $textKey = "text_pages_" . md5($file->filePath);
+            $positionKey = "text_positions_" . md5($file->filePath);
             Cache::put($textKey, $pagesWithKeyword, now()->addMinutes(60));
+            Log::info("PUT KEY: $textKey", ['path' => $file->filePath]);
             Cache::put($positionKey, $textPositions, now()->addMinutes(60));
             // ذخیره موقت صفحات دارای متن
             // $key = "text_pages_" . md5($filePath);
@@ -126,37 +127,28 @@ class PdfSearchService3
 
             // مرحله 2: افزودن صفحات نیازمند OCR به لیست Job کلی
             foreach ($ocrQueue as $page) {
-                $job = new OcrPdfPageJob3($page, $filePath, $pdftoppm, $keyword);
+                $job = new OcrPdfPageJob3($page, $file->filePath, $pdftoppm, $keyword);
                 $job->onConnection('database');
                 $job->onQueue('ocr');
                 $allJobs[] = $job;
             }
 
             // برای نمایش سریع به فرانت
-            // if (count($pagesWithKeyword)) {
-            $results[] = [
-                'file_name' => $file->fileName,
-                // 'file_path'=> url('storage/files/' . $dirPath .'/'. $file->filePath),
-                'file_path' => $file->filePath,
-                'doc_name' => $file->process->title,
-                'architecture_name' => $file->process->architecture->title,
-                'code' => $file->process->code,
-                'found_in_text' => $pagesWithKeyword,
-                'text_positions' => $textPositions, // موقعیت‌های متن
-                'status' => count($ocrQueue) ? 'OCR pending' : 'complete',
-            ];
-            // }
+            if (count($pagesWithKeyword)) {
+                $results[] = [
+                    'file_name' => $file->fileName,
+                    // 'file_path'=> url('storage/files/' . $dirPath .'/'. $file->filePath),
+                    'file_path' => $file->filePath,
+                    'doc_name' => $file->process->title,
+                    'architecture_name' => $file->process->architecture->title,
+                    'code' => $file->process->code,
+                    'found_in_text' => $pagesWithKeyword,
+                    'text_positions' => $textPositions, // موقعیت‌های متن
+                    'status' => count($ocrQueue) ? 'OCR pending' : 'complete',
+                ];
+            }
         }
-        // foreach ($allJobs as $index => $job) {
-        //     $queueName = property_exists($job, 'queue') ? $job->queue : 'not-set';
-        //     $connectionName = property_exists($job, 'connection') ? $job->connection : 'not-set';
-        //     // Log::info("🔍 Job #{$index} => Queue: {$queueName}, Connection: {$connectionName}, Class: " . get_class($job));
-        // }
-        // Log::info('Queue config before dispatch: ', [
-        //     'connection' => config('queue.default'),
-        //     'driver' => config('queue.connections.' . config('queue.default')),
-        // ]);
-        // مرحله 3: اجرای همه صفحات OCR در یک Batch
+
         if (count($allJobs)) {
             $fileData = $files->map(function ($file) {
                 return [
@@ -170,11 +162,11 @@ class PdfSearchService3
             })->toArray();
             Log::info('all job is ', $allJobs);
             Bus::batch($allJobs)
-                ->then(function (Batch $batch) use ($keyword,  $fileData, $searchId) {
+                ->then(function (Batch $batch) use ($keyword, $fileData, $searchId, $pagesWithKeyword, $textPositions) {
                     // بعد از تمام شدن OCR همه فایل‌ها
                     Log::info('✅ then() called for batch: ' . $batch->id);
 
-                    CollectOcrPagesResultsJob3::dispatch($fileData, $keyword, $searchId)->onQueue('ocr')->onConnection('database');
+                    CollectOcrPagesResultsJob3::dispatch($fileData, $keyword, $searchId, $pagesWithKeyword, $textPositions)->onQueue('ocr')->onConnection('database');
 
                 })
                 ->catch(function (Batch $batch, Throwable $e) {
