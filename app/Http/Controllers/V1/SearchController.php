@@ -14,6 +14,7 @@ use App\Procedure;
 use App\Process;
 use App\ProcessFile;
 use App\Services\PdfSearchService3;
+use App\Services\PdfSearchService5;
 use App\SubProcess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -267,6 +268,7 @@ class SearchController extends ApiController
             ], now()->addMinutes(20));
             switch ($docType) {
                 case "process":
+                    // dd(mb_list_encodings());
                     $files = ProcessFile::whereHas('process', function ($query) use ($architecture_id) {
                         $query->where('architecture_id', $architecture_id);
                     })->where('fileName', 'like', '%.pdf')->with([
@@ -275,7 +277,7 @@ class SearchController extends ApiController
                                         ->with('architecture:id,title');
                                 }
                             ])->get();
-                    $fileSearch = new PdfSearchService3();
+                    $fileSearch = new PdfSearchService5();
 
                     $results = $fileSearch->searchFilesByArchitecture($files, $wordSearch, 'processes', $searchId);
                     $perPage = 10;
@@ -542,5 +544,46 @@ class SearchController extends ApiController
             // return $this->successResponse([], 200);
 
         }
+    }
+    public function getResultSearch(Request $request)
+    {
+        $searchId = $request->searchId;
+        $keyword = $request->keyword;
+        $results = [];
+        Cache::put("ocr_result_{$searchId}", $results, 3600);
+        $perPage = 10;
+        $page = 1;
+
+        $collection = collect($results)->map(fn($item) => (object) $item);
+
+        $total = $collection->count();
+
+        $paginated = new LengthAwarePaginator(
+            $collection->forPage($page, $perPage)->values(),
+            $total,
+            $perPage,
+            $page,
+            ['path' => '', 'query' => []]
+        );
+        $resource = ProcessFileSearchResult::collection($paginated)->response()->getData(true);
+
+        // $responseData = [
+        //     "searchId" => $searchId,
+        //     "keyword" => $keyword,
+        //     "typeDoc" => "فرایند",
+        //     "status" => 'کامل',
+        //     "files" => $resource['data'],
+        //     "links" => $resource['links'],
+        //     "meta" => $resource['meta']
+        // ];
+        return $this->successResponse([
+            "searchId" => $searchId,
+            "keyword" => $keyword,
+            "typeDoc" => "فرایند",
+            "status" => 'کامل',
+            "files" => $resource['data'],
+            "links" => $resource['links'],
+            "meta" => $resource['meta']
+        ], 200);
     }
 }

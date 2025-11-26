@@ -113,6 +113,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
                 ];
             }
         }
+        Cache::put("ocr_result_{$this->searchId}", $results, 3600);
         $perPage = 10;
         $page = 1;
 
@@ -147,7 +148,10 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
 
         // info('📢 OCR Results before event:jadid');
 
-        event(new OcrCompleted($responseData));
+        event(new OcrCompleted([
+            'search_id' => $this->searchId,
+            'status' => 'completed'
+        ]));
 
     }
 }
