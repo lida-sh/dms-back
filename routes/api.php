@@ -72,6 +72,8 @@ Route::post('/oauth/token', [AccessTokenController::class, 'issueToken'])
 Route::get('/architectures', [SearchController::class, 'getArchitectures']);
 Route::get("/architectures/{architecture}/processes", [SearchController::class, 'getProcessesOfArchitecture']);
 Route::get("/advanced-search", [SearchController::class, 'doAdvancedSearch']);
+Route::get("/get-ocr-results", [SearchController::class, 'getOcrResults']);
+
 Route::get("/search", [SearchController::class, 'doSearch']);
 Route::get('/procedures', [ProcedureClientController::class, 'index']);
 Route::get('/processes', [ProcessClientController::class, 'index']);

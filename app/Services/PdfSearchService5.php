@@ -24,8 +24,8 @@ class PdfSearchService5
     public function searchFilesByArchitecture($files, $keyword, $dirPath, $searchId)
     {
 
-        $pdftoppm = '"C:\\poppler-25.07.0\\Library\\bin\\pdftoppm.exe"';
-        $pdftotext = '"C:\\poppler-25.07.0\\Library\\bin\\pdftotext.exe"';
+        $pdftoppm = "C:\poppler-25.11.0\Library\bin\\pdftoppm.exe";
+        $pdftotext = "C:\poppler-25.11.0\Library\bin\\pdftotext.exe";
 
         $allJobs = [];
         $results = [];
@@ -52,7 +52,7 @@ class PdfSearchService5
             $totalPages = count($pdf->getPages());
             $pagesWithKeyword = [];
             $ocrQueue = [];
-            $pdfimages = '"C:\\poppler-25.07.0\\Library\\bin\\pdfimages.exe"';
+            $pdfimages = "C:\poppler-25.11.0\Library\bin\\pdfimages.exe";
             $imagesList = shell_exec($pdfimages . ' -list ' . escapeshellarg($filePath));
 
             // هر خط از اطلاعات تصاویر شامل page، num، width، height و type است
@@ -91,8 +91,14 @@ class PdfSearchService5
                 $textRaw = shell_exec($pdftotext .
                     ' -f ' . $page .
                     ' -l ' . $page .
-                    ' -raw -q ' .
+                    ' -layout -q ' .
                     escapeshellarg($filePath) . ' -');
+               
+                $textRaw = $this->removeUnicodeControls($textRaw);
+                // $textRaw = $this->fixPdfExtractErrors($textRaw);
+                
+                $textRaw = $this->normalizePersianText($textRaw);
+                 
                 if ($textRaw !== null) {
                     // تلاش اتوماتیک برای تبدیل به UTF-8
                     $detected = mb_detect_encoding($textRaw, [
@@ -110,11 +116,15 @@ class PdfSearchService5
                         $detected = 'UTF-8';
                     }
                     $text = mb_convert_encoding($textRaw, 'UTF-8', $detected);
-                    
+
                 } else {
                     $text = '';
                 }
-                $text = $this->normalizePersianText($text);
+                // $text = $this->removeUnicodeControls($text);
+                // $text = $this->fixPdfExtractErrors($text);
+                
+                // $text = $this->normalizePersianText($text);
+                // Log::info("text:$text");
                 $pageHasRealImage = false;
                 if (isset($images[$page])) {
                     foreach ($images[$page] as $img) {
@@ -182,7 +192,7 @@ class PdfSearchService5
                     'code' => $file->process->code,
                 ];
             })->toArray();
-            Log::info('all job is ', $allJobs);
+            Log::info('all job is '. count($allJobs));
             Bus::batch($allJobs)
                 ->then(function (Batch $batch) use ($keyword, $fileData, $searchId, $pagesWithKeyword, $textPositions) {
                     // بعد از تمام شدن OCR همه فایل‌ها
@@ -199,7 +209,6 @@ class PdfSearchService5
                 })->onQueue('ocr')
                 ->onConnection('database')
                 ->dispatch();
-            ;
         }
 
         // مرحله 4: پاسخ اولیه به فرانت
@@ -273,7 +282,7 @@ class PdfSearchService5
             'إ' => 'ا',
             'أ' => 'ا',
             'ٱ' => 'ا',
-            'ئ' => 'ی',
+            // 'ئ' => 'ی',
             // اعداد عربی -> لاتین (در صورت نیاز)
             '٠' => '0',
             '١' => '1',
@@ -309,5 +318,46 @@ class PdfSearchService5
         $kw = $this->normalizePersianText($kw);
         return $kw;
     }
+    private function fixPdfExtractErrors(string $text): string
+    {
+        $map = [
+            // اشتباهات رایج pdftotext در PDF فارسی
+            'ط' => 'ت',   // اطالعات → اطلاعات
+            'ص' => 'س',   // اصالحی → اصلاحی
+            // 'ا' => 'ل',   // اطالعات → اطلاعات (گاهی ل می‌شود ا)
+            // 'ل' => 'ا',   // اطالعات → اطلاعات (گاهی ل می‌شود ا)
+            // // بسته به PDF شاید لازم باشد بیشتر اضافه کنید:
+
+            // حرف‌های عربی → فارسی
+            'ي' => 'ی',
+            'ى' => 'ی',
+            'ۀ' => 'ه',
+            'ة' => 'ه',
+            'ك' => 'ک',
+            'ؤ' => 'و',
+        ];
+
+        return strtr($text, $map);
+    }
+    private function removeUnicodeControls(string $text): string
+{
+    // حذف کاراکترهای جهت‌دهی بی‌صدا (directional marks)
+    $controls = [
+        "\u{202A}", // LRE
+        "\u{202B}", // RLE
+        "\u{202D}", // LRO
+        "\u{202E}", // RLO
+        "\u{202C}", // PDF
+        "\u{2066}", // LRI
+        "\u{2067}", // RLI
+        "\u{2068}", // FSI
+        "\u{2069}", // PDI
+        "\u{200F}", // RTL mark
+        "\u{200E}", // LTR mark
+        "\u{061C}", // Arabic letter mark
+    ];
+
+    return str_replace($controls, '', $text);
+}
 
 }

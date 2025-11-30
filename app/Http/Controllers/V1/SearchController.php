@@ -545,10 +545,10 @@ class SearchController extends ApiController
 
         }
     }
-    public function getResultSearch(Request $request)
-    {
-        $searchId = $request->searchId;
-        $keyword = $request->keyword;
+    
+    public function getOcrResults(Request $request){
+       $searchId = $request->searchId;
+        // $keyword = $request->keyword;
         $results = [];
         Cache::put("ocr_result_{$searchId}", $results, 3600);
         $perPage = 10;
@@ -578,7 +578,7 @@ class SearchController extends ApiController
         // ];
         return $this->successResponse([
             "searchId" => $searchId,
-            "keyword" => $keyword,
+            // "keyword" => $keyword,
             "typeDoc" => "فرایند",
             "status" => 'کامل',
             "files" => $resource['data'],

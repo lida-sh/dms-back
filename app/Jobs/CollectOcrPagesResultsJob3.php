@@ -60,18 +60,23 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
             $textKey = 'text_pages_' . md5($filePath); // صفحات متنی معمولی
             $ocrPositionKey = 'ocr_positions_' . md5($filePath);
             $textPositionKey = 'text_positions_' . md5($filePath);
-
-            if (config('cache.default') === 'redis') {
-                $ocrPages = Redis::smembers($ocrKey);
-                $ocrPositions = Redis::get($ocrPositionKey) ? json_decode(Redis::get($ocrPositionKey), true) : [];
-                Redis::del([$ocrKey, $ocrPositionKey]);
-            } else {
-                $ocrPages = Cache::get($ocrKey, []);
+            $ocrPages = Cache::get($ocrKey, []);
                 $ocrPositions = Cache::get($ocrPositionKey, []);
+                Log::info('✅ocrPages:  ', $ocrPages);
                 Cache::forget($ocrKey);
                 Cache::forget($ocrPositionKey);
-            }
-
+            // if (config('cache.default') === 'redis') {
+            //     $ocrPages = Redis::smembers($ocrKey);
+            //     $ocrPositions = Redis::get($ocrPositionKey) ? json_decode(Redis::get($ocrPositionKey), true) : [];
+            //     Redis::del([$ocrKey, $ocrPositionKey]);
+            // } else {
+            //     $ocrPages = Cache::get($ocrKey, []);
+            //     $ocrPositions = Cache::get($ocrPositionKey, []);
+            //     Log::info('✅ocrPages:  ', $ocrPages);
+            //     Cache::forget($ocrKey);
+            //     Cache::forget($ocrPositionKey);
+            // }
+            
             // ---- خواندن صفحات متنی ----
             $textPages = Cache::get($textKey, []);
             Log::info("GET KEY: $textKey", ['path' => $filePath]);

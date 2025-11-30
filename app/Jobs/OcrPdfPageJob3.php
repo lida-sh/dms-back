@@ -42,26 +42,44 @@ class OcrPdfPageJob3 implements ShouldQueue
      */
     public function handle()
     {
-        // Log::info("▶️ Running OCR job for page {$this->page} (Batch: " . optional($this->batch())->id . ")");
+        Log::info("▶️ Running OCR job for page {$this->page} (Batch: " . optional($this->batch())->id . ")");
+        Log::info("DEBUG BEFORE TRY", [
+            'page' => $this->page,
+            'filePath' => $this->filePath,
+            'pdftoppm' => $this->pdftoppm,
+            'keyword' => $this->keyword,
+        ]);
         try {
+            $tesseractPath = 'C:\Users\0532350669\AppData\Local\Programs\Tesseract-OCR\tesseract.exe';
+            $filePathComplete = public_path('storage/files/' . 'processes' . '/' . $this->filePath);
+            Log::info("بدنه داخل جاب");
             $key = 'ocr_pages_' . md5($this->filePath);
             $imagePath = str_replace('/', DIRECTORY_SEPARATOR, public_path("storage/files/_$this->page"));
-
-            $cmd = $this->pdftoppm . " -f {$this->page} -l {$this->page} -singlefile -png "
-                . escapeshellarg($this->filePath) . " "
-                . escapeshellarg($imagePath) . " 2>&1";
+            Log::info("imagePath: " . public_path("storage/files/_$this->page"));
+            $cmd = $this->pdftoppm . ' -png -f ' . $this->page . ' -l ' . $this->page . ' -r 200 ' .
+                escapeshellarg($filePathComplete) . ' ' . $imagePath;
+            // $cmd = $this->pdftoppm . " -f {$this->page} -l {$this->page} -singlefile -png "
+            //     . escapeshellarg($filePathComplete) . " "
+            //     . escapeshellarg($imagePath) . " 2>&1";
 
             exec($cmd, $output, $return_var);
             if ($return_var !== 0 || !file_exists($imagePath . ".png")) {
                 return; // خطا → صفحه رد میشه
             }
-
-            $ocrText = (new TesseractOCR($imagePath . ".png"))
-                ->lang('fas')
-                ->psm(6)
-                ->oem(1)
-                ->run();
-
+            Log::info("EXEC OUTPUT", [
+                'return_var' => $return_var,
+                'output' => $output
+            ]);
+            $ocr = new TesseractOCR($imagePath . '-1.png');
+            $ocr->executable($tesseractPath);
+            $ocr->lang('fas'); // زبان فارسی
+            $ocrText = $ocr->run();
+            // $ocrText = (new TesseractOCR($imagePath . ".png"))
+            //     ->lang('fas')
+            //     ->psm(6)
+            //     ->oem(1)
+            //     ->run();
+            Log::info('ocrText......' . $ocrText);
             unlink($imagePath . ".png");
 
             if (!empty($ocrText) && mb_stripos($ocrText, $this->keyword) !== false) {
@@ -88,29 +106,29 @@ class OcrPdfPageJob3 implements ShouldQueue
 
                 // ]);
             }
-            
+
         } catch (\Throwable $e) {
             Log::error("OcrPdfPageJob failed for {$this->filePath} page {$this->page}: " . $e->getMessage());
         }
     }
-     private function findOcrKeywordPositions($text, $keyword, $page)
+    private function findOcrKeywordPositions($text, $keyword, $page)
     {
         $positions = [];
         $offset = 0;
         $keyword = mb_strtolower($keyword);
         $textLower = mb_strtolower($text);
-        
+
         while (($pos = mb_stripos($textLower, $keyword, $offset)) !== false) {
             // برای OCR، موقعیت‌ها نسبی هستند
             $textBefore = mb_substr($text, 0, $pos);
             $linesBefore = explode("\n", $textBefore);
             $lineNumber = count($linesBefore);
             $column = mb_strlen(end($linesBefore)) + 1;
-            
+
             $startContext = max(0, $pos - 30);
             $endContext = min(mb_strlen($text), $pos + mb_strlen($keyword) + 30);
             $context = mb_substr($text, $startContext, $endContext - $startContext);
-            
+
             $positions[] = [
                 'page' => $page,
                 'position' => $pos,
@@ -120,7 +138,7 @@ class OcrPdfPageJob3 implements ShouldQueue
                 'length' => mb_strlen($keyword),
                 'type' => 'ocr' // برای تشخیص منبع در فرانت
             ];
-            
+
             $offset = $pos + mb_strlen($keyword);
         }
         return $positions;
