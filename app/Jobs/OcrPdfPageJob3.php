@@ -52,25 +52,55 @@ class OcrPdfPageJob3 implements ShouldQueue
         try {
             $tesseractPath = 'C:\Users\0532350669\AppData\Local\Programs\Tesseract-OCR\tesseract.exe';
             $filePathComplete = public_path('storage/files/' . 'processes' . '/' . $this->filePath);
+            $pdfPath = str_replace('/', '\\', $filePathComplete);
             Log::info("بدنه داخل جاب");
             $key = 'ocr_pages_' . md5($this->filePath);
             $imagePath = str_replace('/', DIRECTORY_SEPARATOR, public_path("storage/files/_$this->page"));
-            Log::info("imagePath: " . public_path("storage/files/_$this->page"));
-            $cmd = $this->pdftoppm . ' -png -f ' . $this->page . ' -l ' . $this->page . ' -r 200 ' .
-                escapeshellarg($filePathComplete) . ' ' . $imagePath;
+            Log::info("imagePath: " . $imagePath);
+            // $cmd = $this->pdftoppm . ' -png -f ' . $this->page . ' -l ' . $this->page . ' -r 200 ' .
+            //     escapeshellarg($filePathComplete) . ' ' . $imagePath;
+            $gs = "C:\\Program Files\\gs\\gs10.06.0\\bin\\gswin64c.exe";
+            $outputPath = $imagePath . ".png";
+            // $cmd = "\"$gs\" -dNOPAUSE -dBATCH -dSAFER -sDEVICE=png16m -r300 " .
+            //     "-sOutputFile=" . escapeshellarg($outputPath) . " " .
+            //     escapeshellarg($pdfPath);
+
+            $cmd = "\"$gs\" -dNOPAUSE -dBATCH -dSAFER -sDEVICE=png16m -r300 "
+                . "-dFirstPage={$this->page} -dLastPage={$this->page} "
+                . "-sOutputFile=" . escapeshellarg($outputPath) . " "
+                . escapeshellarg($pdfPath);
+            exec($cmd, $output, $return);
+            // Log::info("GS Output:", [
+            //     'cmd' => $cmd,
+            //     'return' => $return,
+            //     'output' => $output,
+            //     'exists' => file_exists($outputPath)
+            // ]);
+            //-----------------------------
+            // $cmd = $this->pdftoppm آخرین کامند
+            //     . " -f {$this->page} -l {$this->page} -singlefile -png "
+            //     . "--fontdir " . escapeshellarg("C:\\Windows\\Fonts") . " "
+            //     . escapeshellarg($filePathComplete) . " "
+            //     . escapeshellarg($imagePath)
+            //     . " 2>&1";
+            //-----------------------------
             // $cmd = $this->pdftoppm . " -f {$this->page} -l {$this->page} -singlefile -png "
             //     . escapeshellarg($filePathComplete) . " "
             //     . escapeshellarg($imagePath) . " 2>&1";
-
-            exec($cmd, $output, $return_var);
-            if ($return_var !== 0 || !file_exists($imagePath . ".png")) {
-                return; // خطا → صفحه رد میشه
-            }
-            Log::info("EXEC OUTPUT", [
-                'return_var' => $return_var,
-                'output' => $output
-            ]);
-            $ocr = new TesseractOCR($imagePath . '-1.png');
+            //----------------
+            // exec($cmd, $output, $return_var);
+            // if ($return_var !== 0 || !file_exists($imagePath . ".png")) {
+            //     return; // خطا → صفحه رد میشه
+            // }
+            // Log::info("Checking exists: " . ($imagePath . ".png"), [
+            //     'exists' => file_exists($imagePath . ".png")
+            // ]);
+            // Log::info("EXEC OUTPUT", [
+            //     'return_var' => $return_var,
+            //     'output' => $output
+            // ]);
+            //-----------------------------
+            $ocr = new TesseractOCR($imagePath . '.png');
             $ocr->executable($tesseractPath);
             $ocr->lang('fas'); // زبان فارسی
             $ocrText = $ocr->run();
@@ -81,10 +111,10 @@ class OcrPdfPageJob3 implements ShouldQueue
             //     ->run();
             Log::info('ocrText......' . $ocrText);
             unlink($imagePath . ".png");
-
+            // Log::info('ocrTest' . mb_stripos($ocrText, $this->keyword));
             if (!empty($ocrText) && mb_stripos($ocrText, $this->keyword) !== false) {
                 $ocrPositions = $this->findOcrKeywordPositions($ocrText, $this->keyword, $this->page);
-
+                Log::info('ocrPositions' . $ocrPositions);
                 $key = 'ocr_pages_' . md5($this->filePath);
                 $positionKey = 'ocr_positions_' . md5($this->filePath);
                 // Redis::sadd($key, $this->page);            // add page to set
