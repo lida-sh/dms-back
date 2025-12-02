@@ -34,7 +34,7 @@ class PdfSearchService5
         // برای هر فایل
         foreach ($files as $file) {
             $filePath = public_path('storage/files/' . $dirPath . '/' . $file->filePath);
-            // Log::info("filePath:" . $filePath);
+            Log::info("filePath:" . $filePath);
             if (!file_exists($filePath)) {
                 $results[] = [
                     'file_name' => $file->fileName,
@@ -93,7 +93,7 @@ class PdfSearchService5
                     ' -l ' . $page .
                     ' -layout -q ' .
                     escapeshellarg($filePath) . ' -');
-               
+                Log::info("textRaw" . $textRaw. "page" . $page);
                 $textRaw = $this->removeUnicodeControls($textRaw);
                 // $textRaw = $this->fixPdfExtractErrors($textRaw);
                 
@@ -116,7 +116,7 @@ class PdfSearchService5
                         $detected = 'UTF-8';
                     }
                     $text = mb_convert_encoding($textRaw, 'UTF-8', $detected);
-
+                     
                 } else {
                     $text = '';
                 }
@@ -125,17 +125,17 @@ class PdfSearchService5
                 
                 // $text = $this->normalizePersianText($text);
                 // Log::info("text:$text");
-                $pageHasRealImage = false;
-                if (isset($images[$page])) {
-                    foreach ($images[$page] as $img) {
-                        $sizeKey = $img['width'] . 'x' . $img['height'];
-                        if (!in_array($sizeKey, $logoSizes)) {
-                            // تصویر غیرتکراری در صفحه وجود دارد
-                            $pageHasRealImage = true;
-                            break;
-                        }
-                    }
-                }
+                $pageHasRealImage = true;
+                // if (isset($images[$page])) {
+                //     foreach ($images[$page] as $img) {
+                //         $sizeKey = $img['width'] . 'x' . $img['height'];
+                //         if (!in_array($sizeKey, $logoSizes)) {
+                //             // تصویر غیرتکراری در صفحه وجود دارد
+                //             $pageHasRealImage = true;
+                //             break;
+                //         }
+                //     }
+                // }
 
                 if (!empty(trim($text))) {
                     $pagePositions = $this->findKeywordPositions($text, $keyword, $page);

@@ -550,7 +550,8 @@ class SearchController extends ApiController
        $searchId = $request->searchId;
         // $keyword = $request->keyword;
         $results = [];
-        Cache::put("ocr_result_{$searchId}", $results, 3600);
+        $results = Cache::get("ocr_result_{$searchId}", []);
+        Cache::forget("ocr_result_{$searchId}");
         $perPage = 10;
         $page = 1;
 

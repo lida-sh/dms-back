@@ -105,6 +105,8 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
                 return $a['page'] - $b['page'];
             });
             if (count($textPages) || count($ocrPages)) {
+                Log::info('✅این فایل کلمه را دارد ');
+                Log::info(array_map('intval', $ocrPages));
                 $results[] = [
                     'file_name' => $fileName,
                     'file_path' => $filePath,

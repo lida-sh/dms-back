@@ -102,7 +102,8 @@ class OcrPdfPageJob3 implements ShouldQueue
             //-----------------------------
             $ocr = new TesseractOCR($imagePath . '.png');
             $ocr->executable($tesseractPath);
-            $ocr->lang('fas'); // زبان فارسی
+            $ocr->lang('fas')->psm(6)->oem(1);
+           
             $ocrText = $ocr->run();
             // $ocrText = (new TesseractOCR($imagePath . ".png"))
             //     ->lang('fas')
@@ -114,7 +115,8 @@ class OcrPdfPageJob3 implements ShouldQueue
             // Log::info('ocrTest' . mb_stripos($ocrText, $this->keyword));
             if (!empty($ocrText) && mb_stripos($ocrText, $this->keyword) !== false) {
                 $ocrPositions = $this->findOcrKeywordPositions($ocrText, $this->keyword, $this->page);
-                Log::info('ocrPositions' . $ocrPositions);
+                Log::info('ocrPositions کلمه دیده شد');
+                
                 $key = 'ocr_pages_' . md5($this->filePath);
                 $positionKey = 'ocr_positions_' . md5($this->filePath);
                 // Redis::sadd($key, $this->page);            // add page to set
