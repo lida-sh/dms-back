@@ -14,7 +14,7 @@ use App\Procedure;
 use App\Process;
 use App\ProcessFile;
 use App\Services\PdfSearchService3;
-use App\Services\PdfSearchService5;
+use App\Services\PdfSearchService6;
 use App\SubProcess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -277,7 +277,7 @@ class SearchController extends ApiController
                                         ->with('architecture:id,title');
                                 }
                             ])->get();
-                    $fileSearch = new PdfSearchService5();
+                    $fileSearch = new PdfSearchService6();
 
                     $results = $fileSearch->searchFilesByArchitecture($files, $wordSearch, 'processes', $searchId);
                     $perPage = 10;

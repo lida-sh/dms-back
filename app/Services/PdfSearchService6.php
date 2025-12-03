@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Jobs\SearchPdfFileJob;
 use Illuminate\Bus\Batchable;
 
-class PdfSearchService5
+class PdfSearchService6
 {
     use Batchable;
 
@@ -120,17 +120,17 @@ class PdfSearchService5
                 }
                 
                 
-                $pageHasRealImage = true;
-                // if (isset($images[$page])) {
-                //     foreach ($images[$page] as $img) {
-                //         $sizeKey = $img['width'] . 'x' . $img['height'];
-                //         if (!in_array($sizeKey, $logoSizes)) {
-                //             // تصویر غیرتکراری در صفحه وجود دارد
-                //             $pageHasRealImage = true;
-                //             break;
-                //         }
-                //     }
-                // }
+                $pageHasRealImage = false;
+                if (isset($images[$page])) {
+                    foreach ($images[$page] as $img) {
+                        $sizeKey = $img['width'] . 'x' . $img['height'];
+                        if (!in_array($sizeKey, $logoSizes)) {
+                            // تصویر غیرتکراری در صفحه وجود دارد
+                            $pageHasRealImage = true;
+                            break;
+                        }
+                    }
+                }
 
                 if (!empty(trim($text))) {
                     $pagePositions = $this->findKeywordPositions($text, $keyword, $page);
@@ -139,19 +139,16 @@ class PdfSearchService5
                         $textPositions[$page] = $pagePositions;
                     }
                 }
-                if ($pageHasRealImage) {
+                if ($pageHasRealImage || empty($pagePositions)) {
                     $ocrQueue[] = $page;
                 }
             }
-            $textKey = "text_pages_" . md5($file->filePath);
-            $positionKey = "text_positions_" . md5($file->filePath);
-            Cache::put($textKey, $pagesWithKeyword, now()->addMinutes(60));
-            Log::info("PUT KEY: $textKey", ['path' => $file->filePath]);
-            Cache::put($positionKey, $textPositions, now()->addMinutes(60));
-            // ذخیره موقت صفحات دارای متن
-            // $key = "text_pages_" . md5($filePath);
-            // Cache::put($key, $pagesWithKeyword, now()->addMinutes(60));
-
+            // $textKey = "text_pages_" . md5($file->filePath);
+            // $positionKey = "text_positions_" . md5($file->filePath);
+            // Cache::put($textKey, $pagesWithKeyword, now()->addMinutes(60));
+            // Log::info("PUT KEY: $textKey", ['path' => $file->filePath]);
+            // Cache::put($positionKey, $textPositions, now()->addMinutes(60));
+            
             // مرحله 2: افزودن صفحات نیازمند OCR به لیست Job کلی
             foreach ($ocrQueue as $page) {
                 $job = new OcrPdfPageJob3($page, $file->filePath, $pdftoppm, $keyword);

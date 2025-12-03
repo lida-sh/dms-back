@@ -57,14 +57,14 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
             // $filePath = public_path('storage/files/processes/' . $file->filePath);
 
             $ocrKey = 'ocr_pages_' . md5($filePath); // OCR صفحات تصویری
-            $textKey = 'text_pages_' . md5($filePath); // صفحات متنی معمولی
+            // $textKey = 'text_pages_' . md5($filePath); // صفحات متنی معمولی
             $ocrPositionKey = 'ocr_positions_' . md5($filePath);
-            $textPositionKey = 'text_positions_' . md5($filePath);
+            // $textPositionKey = 'text_positions_' . md5($filePath);
             $ocrPages = Cache::get($ocrKey, []);
-                $ocrPositions = Cache::get($ocrPositionKey, []);
-                Log::info('✅ocrPages:  ', $ocrPages);
-                Cache::forget($ocrKey);
-                Cache::forget($ocrPositionKey);
+            $ocrPositions = Cache::get($ocrPositionKey, []);
+            Log::info('✅ocrPages:  ', $ocrPages);
+            Cache::forget($ocrKey);
+            Cache::forget($ocrPositionKey);
             // if (config('cache.default') === 'redis') {
             //     $ocrPages = Redis::smembers($ocrKey);
             //     $ocrPositions = Redis::get($ocrPositionKey) ? json_decode(Redis::get($ocrPositionKey), true) : [];
@@ -76,17 +76,17 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
             //     Cache::forget($ocrKey);
             //     Cache::forget($ocrPositionKey);
             // }
-            
+
             // ---- خواندن صفحات متنی ----
-            $textPages = Cache::get($textKey, []);
-            Log::info("GET KEY: $textKey", ['path' => $filePath]);
-            Log::info('✅textPages:  ', $textPages);
-            $textPositions = Cache::get($textPositionKey, []);
-            Cache::forget($textKey);
-            Cache::forget($textPositionKey);
+            // $textPages = Cache::get($textKey, []);
+            // Log::info("GET KEY: $textKey", ['path' => $filePath]);
+            // Log::info('✅textPages:  ', $textPages);
+            // $textPositions = Cache::get($textPositionKey, []);
+            // Cache::forget($textKey);
+            // Cache::forget($textPositionKey);
 
             $allPositions = [];
-            foreach ($textPositions as $page => $positions) {
+            foreach ($this->textPositions as $page => $positions) {
                 foreach ($positions as $pos) {
                     $pos['type'] = 'text';
                     $allPositions[] = $pos;
@@ -104,7 +104,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
                 }
                 return $a['page'] - $b['page'];
             });
-            if (count($textPages) || count($ocrPages)) {
+            if (count($this->pagesWithKeyword) || count($ocrPages)) {
                 Log::info('✅این فایل کلمه را دارد ');
                 Log::info(array_map('intval', $ocrPages));
                 $results[] = [
@@ -113,7 +113,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
                     'doc_name' => $docName ?? null,
                     'code' => $code ?? null,
                     'architecture_name' => $architectureName ?? null,
-                    'found_in_text' => array_map('intval', $textPages),
+                    'found_in_text' => array_map('intval', $this->pagesWithKeyword),
                     'found_in_images' => array_map('intval', $ocrPages),
                     'positions' => $allPositions, // تمام موقعیت‌های دقیق
                     'total_matches' => count($allPositions)
@@ -121,39 +121,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
             }
         }
         Cache::put("ocr_result_{$this->searchId}", $results, 3600);
-        $perPage = 10;
-        $page = 1;
-
-        $collection = collect($results)->map(fn($item) => (object) $item);
-
-        $total = $collection->count();
-
-        $paginated = new LengthAwarePaginator(
-            $collection->forPage($page, $perPage)->values(),
-            $total,
-            $perPage,
-            $page,
-            ['path' => '', 'query' => []]
-        );
-        $resource = ProcessFileSearchResult::collection($paginated)->response()->getData(true);
-
-        $responseData = [
-            "searchId" => $this->searchId,
-            "keyword" => $this->keyword,
-            "typeDoc" => "فرایند",
-            "status" => 'کامل',
-            "files" => $resource['data'],
-            "links" => $resource['links'],
-            "meta" => $resource['meta']
-        ];
-
-
-        // 🚀 ارسال به فرانت
-        // broadcast(new SearchCompletedEvent($responseData));
-        // $finalKey = 'ocr_final_result_' . md5($this->keyword);
-        // Cache::put($finalKey, $results, now()->addMinutes(60));
-
-        // info('📢 OCR Results before event:jadid');
+    
 
         event(new OcrCompleted([
             'search_id' => $this->searchId,
