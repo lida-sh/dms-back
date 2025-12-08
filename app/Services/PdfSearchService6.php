@@ -33,7 +33,7 @@ class PdfSearchService6
         // برای هر فایل
         foreach ($files as $file) {
             $filePath = public_path('storage/files/' . $dirPath . '/' . $file->filePath);
-            Log::info("filePath:" . $filePath);
+            // Log::info("filePath:" . $filePath);
             if (!file_exists($filePath)) {
                 $results[] = [
                     'file_name' => $file->fileName,
@@ -143,11 +143,11 @@ class PdfSearchService6
                     $ocrQueue[] = $page;
                 }
             }
-            // $textKey = "text_pages_" . md5($file->filePath);
-            // $positionKey = "text_positions_" . md5($file->filePath);
-            // Cache::put($textKey, $pagesWithKeyword, now()->addMinutes(60));
-            // Log::info("PUT KEY: $textKey", ['path' => $file->filePath]);
-            // Cache::put($positionKey, $textPositions, now()->addMinutes(60));
+            $textKey = "text_pages_" . md5($file->filePath);
+            $positionKey = "text_positions_" . md5($file->filePath);
+            Cache::put($textKey, $pagesWithKeyword, now()->addMinutes(60));
+            Log::info("PUT KEY: $textKey", ['path' => $file->filePath]);
+            Cache::put($positionKey, $textPositions, now()->addMinutes(60));
             
             // مرحله 2: افزودن صفحات نیازمند OCR به لیست Job کلی
             foreach ($ocrQueue as $page) {
@@ -184,7 +184,8 @@ class PdfSearchService6
                     'code' => $file->process->code,
                 ];
             })->toArray();
-            Log::info('all job is '. count($allJobs));
+            Log::info('all job is ');
+            Log::info('pagesWithKeyword',$pagesWithKeyword);
             Bus::batch($allJobs)
                 ->then(function (Batch $batch) use ($keyword, $fileData, $searchId, $pagesWithKeyword, $textPositions) {
                     // بعد از تمام شدن OCR همه فایل‌ها

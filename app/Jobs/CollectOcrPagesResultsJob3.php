@@ -57,9 +57,9 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
             // $filePath = public_path('storage/files/processes/' . $file->filePath);
 
             $ocrKey = 'ocr_pages_' . md5($filePath); // OCR صفحات تصویری
-            // $textKey = 'text_pages_' . md5($filePath); // صفحات متنی معمولی
+            $textKey = 'text_pages_' . md5($filePath); // صفحات متنی معمولی
             $ocrPositionKey = 'ocr_positions_' . md5($filePath);
-            // $textPositionKey = 'text_positions_' . md5($filePath);
+            $textPositionKey = 'text_positions_' . md5($filePath);
             $ocrPages = Cache::get($ocrKey, []);
             $ocrPositions = Cache::get($ocrPositionKey, []);
             Log::info('✅ocrPages:  ', $ocrPages);
@@ -77,10 +77,12 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
             //     Cache::forget($ocrPositionKey);
             // }
 
+
+
             // ---- خواندن صفحات متنی ----
-            // $textPages = Cache::get($textKey, []);
+            $textPages = Cache::get($textKey, []);
             // Log::info("GET KEY: $textKey", ['path' => $filePath]);
-            // Log::info('✅textPages:  ', $textPages);
+            Log::info('✅textPages:  ', $textPages);
             // $textPositions = Cache::get($textPositionKey, []);
             // Cache::forget($textKey);
             // Cache::forget($textPositionKey);
@@ -104,8 +106,9 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
                 }
                 return $a['page'] - $b['page'];
             });
-            if (count($this->pagesWithKeyword) || count($ocrPages)) {
-                Log::info('✅این فایل کلمه را دارد ');
+            if (count($textPages) || count($ocrPages)) {
+                Log::info('✅این فایل کلمه را دارد*************** ');
+                Log::info(array_map('intval', $textPages));
                 Log::info(array_map('intval', $ocrPages));
                 $results[] = [
                     'file_name' => $fileName,
@@ -113,7 +116,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
                     'doc_name' => $docName ?? null,
                     'code' => $code ?? null,
                     'architecture_name' => $architectureName ?? null,
-                    'found_in_text' => array_map('intval', $this->pagesWithKeyword),
+                    'found_in_text' => array_map('intval', $textPages),
                     'found_in_images' => array_map('intval', $ocrPages),
                     'positions' => $allPositions, // تمام موقعیت‌های دقیق
                     'total_matches' => count($allPositions)
