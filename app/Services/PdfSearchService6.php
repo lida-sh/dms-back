@@ -7,7 +7,7 @@ use Smalot\PdfParser\Parser;
 use Spatie\PdfToImage\Pdf;
 use thiagoalessio\TesseractOCR\TesseractOCR;
 use parallel\Runtime;
-use App\Jobs\OcrPdfPageJob3;
+use App\Jobs\OcrPdfPageJob4;
 use App\Jobs\CollectOcrPagesResultsJob3;
 use Illuminate\Bus\Batch;
 use Illuminate\Support\Facades\Bus;
@@ -24,8 +24,8 @@ class PdfSearchService6
     public function searchFilesByArchitecture($files, $keyword, $dirPath, $searchId)
     {
 
-        $pdftoppm = "C:\poppler-25.11.0\Library\bin\\pdftoppm.exe";
         $pdftotext = "C:\poppler-25.11.0\Library\bin\\pdftotext.exe";
+        $gs = "C:\\Program Files\\gs\\gs10.06.0\\bin\\gswin64c.exe";
 
         $allJobs = [];
         $results = [];
@@ -90,7 +90,7 @@ class PdfSearchService6
                 $textRaw = shell_exec($pdftotext .
                     ' -f ' . $page .
                     ' -l ' . $page .
-                    ' -layout -q ' .
+                    ' -layout -enc UTF-8 -q ' .
                     escapeshellarg($filePath) . ' -');
                 $textRaw = $this->removeUnicodeControls($textRaw);
                 // $textRaw = $this->fixPdfExtractErrors($textRaw);
@@ -144,14 +144,14 @@ class PdfSearchService6
                 }
             }
             $textKey = "text_pages_" . md5($file->filePath);
-            $positionKey = "text_positions_" . md5($file->filePath);
+            // $positionKey = "text_positions_" . md5($file->filePath);
             Cache::put($textKey, $pagesWithKeyword, now()->addMinutes(60));
-            Log::info("PUT KEY: $textKey", ['path' => $file->filePath]);
-            Cache::put($positionKey, $textPositions, now()->addMinutes(60));
+            // Log::info("PUT KEY: $textKey", ['path' => $file->filePath]);
+            // Cache::put($positionKey, $textPositions, now()->addMinutes(60));
             
             // مرحله 2: افزودن صفحات نیازمند OCR به لیست Job کلی
             foreach ($ocrQueue as $page) {
-                $job = new OcrPdfPageJob3($page, $file->filePath, $pdftoppm, $keyword);
+                $job = new OcrPdfPageJob4($page, $file->filePath, $keyword, $dirPath, $gs);
                 $job->onConnection('database');
                 $job->onQueue('ocr');
                 $allJobs[] = $job;
@@ -167,14 +167,14 @@ class PdfSearchService6
                     'architecture_name' => $file->process->architecture->title,
                     'code' => $file->process->code,
                     'found_in_text' => $pagesWithKeyword,
-                    'text_positions' => $textPositions, // موقعیت‌های متن
-                    'status' => count($ocrQueue) ? 'OCR pending' : 'complete',
+                    // 'text_positions' => $textPositions, // موقعیت‌های متن
+                    // 'status' => count($ocrQueue) ? 'OCR pending' : 'complete',
                 ];
             }
         }
 
         if (count($allJobs)) {
-            $fileData = $files->map(function ($file) {
+            $filesData = $files->map(function ($file) {
                 return [
                     'id' => $file->id,
                     'file_name' => $file->fileName,
@@ -184,14 +184,12 @@ class PdfSearchService6
                     'code' => $file->process->code,
                 ];
             })->toArray();
-            Log::info('all job is ');
-            Log::info('pagesWithKeyword',$pagesWithKeyword);
+           
+            
             Bus::batch($allJobs)
-                ->then(function (Batch $batch) use ($keyword, $fileData, $searchId, $pagesWithKeyword, $textPositions) {
+                ->then(function (Batch $batch) use ($filesData, $keyword, $searchId, $pagesWithKeyword) {
                     // بعد از تمام شدن OCR همه فایل‌ها
-                    Log::info('✅ then() called for batch: ' . $batch->id);
-
-                    CollectOcrPagesResultsJob3::dispatch($fileData, $keyword, $searchId, $pagesWithKeyword, $textPositions)->onQueue('ocr')->onConnection('database');
+                    CollectOcrPagesResultsJob3::dispatch($filesData, $keyword, $searchId, $pagesWithKeyword)->onQueue('ocr')->onConnection('database');
 
                 })
                 ->catch(function (Batch $batch, Throwable $e) {
@@ -207,7 +205,7 @@ class PdfSearchService6
         // مرحله 4: پاسخ اولیه به فرانت
         return [
             'results' => $results,
-            'status' => count($allJobs) ? 'processing ' . count($allJobs) . ' jobs' : 'complete',
+            'status' => count($allJobs) ? 'در حال پردازش ' . count($allJobs) . ' تصویر' : 'پردازش کامل شد.',
         ];
     }
     private function findKeywordPositions($text, $keyword, $page)

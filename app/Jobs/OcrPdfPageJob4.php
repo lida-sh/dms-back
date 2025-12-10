@@ -12,7 +12,7 @@ use thiagoalessio\TesseractOCR\TesseractOCR;
 use Illuminate\Bus\Batchable;
 use Illuminate\Support\Facades\Log;
 
-class OcrPdfPageJob3 implements ShouldQueue
+class OcrPdfPageJob4 implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
@@ -54,9 +54,8 @@ class OcrPdfPageJob3 implements ShouldQueue
             $key = 'ocr_pages_' . md5($this->filePath);
             $imagePath = str_replace('/', DIRECTORY_SEPARATOR, public_path("storage/files/_$this->page"));
             $outputPath = $imagePath . ".png";
-            // $cmd = $this->pdftoppm . ' -png -f ' . $this->page . ' -l ' . $this->page . ' -r 200 ' .
-            //     escapeshellarg($filePathComplete) . ' ' . $imagePath;
             
+        
             // $cmd = "\"$gs\" -dNOPAUSE -dBATCH -dSAFER -sDEVICE=png16m -r300 " .
             //     "-sOutputFile=" . escapeshellarg($outputPath) . " " .
             //     escapeshellarg($pdfPath);
@@ -67,46 +66,16 @@ class OcrPdfPageJob3 implements ShouldQueue
                 . escapeshellarg($pdfPath);
             exec($cmd, $output, $return);
            
-            //-----------------------------
-            // $cmd = $this->pdftoppm آخرین کامند
-            //     . " -f {$this->page} -l {$this->page} -singlefile -png "
-            //     . "--fontdir " . escapeshellarg("C:\\Windows\\Fonts") . " "
-            //     . escapeshellarg($filePathComplete) . " "
-            //     . escapeshellarg($imagePath)
-            //     . " 2>&1";
-            //-----------------------------
-            // $cmd = $this->pdftoppm . " -f {$this->page} -l {$this->page} -singlefile -png "
-            //     . escapeshellarg($filePathComplete) . " "
-            //     . escapeshellarg($imagePath) . " 2>&1";
-            //----------------
-            // exec($cmd, $output, $return_var);
-            // if ($return_var !== 0 || !file_exists($imagePath . ".png")) {
-            //     return; // خطا → صفحه رد میشه
-            // }
-            // Log::info("Checking exists: " . ($imagePath . ".png"), [
-            //     'exists' => file_exists($imagePath . ".png")
-            // ]);
-            // Log::info("EXEC OUTPUT", [
-            //     'return_var' => $return_var,
-            //     'output' => $output
-            // ]);
-            //-----------------------------
             $ocr = new TesseractOCR($imagePath . '.png');
             $ocr->executable($tesseractPath);
             $ocr->lang('fas')->psm(6)->oem(1);
            
             $ocrText = $ocr->run();
-            // $ocrText = (new TesseractOCR($imagePath . ".png"))
-            //     ->lang('fas')
-            //     ->psm(6)
-            //     ->oem(1)
-            //     ->run();
-            Log::info('ocrText......' . $ocrText);
+            
             unlink($imagePath . ".png");
-            // Log::info('ocrTest' . mb_stripos($ocrText, $this->keyword));
+            
             if (!empty($ocrText) && mb_stripos($ocrText, $this->keyword) !== false) {
                 $ocrPositions = $this->findOcrKeywordPositions($ocrText, $this->keyword, $this->page);
-                Log::info('ocrPositions کلمه دیده شد');
                 
                 $key = 'ocr_pages_' . md5($this->filePath);
                 $positionKey = 'ocr_positions_' . md5($this->filePath);

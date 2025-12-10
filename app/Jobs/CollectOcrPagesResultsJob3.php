@@ -17,7 +17,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     // protected $files;
-    protected $fileData;
+    protected $filesData;
     protected $pagesWithKeyword;
     protected $textPositions;
 
@@ -28,11 +28,10 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($fileData, $keyword, $searchId, $pagesWithKeyword, $textPositions)
+    public function __construct($filesData, $keyword, $searchId, $pagesWithKeyword)
     {
         $this->pagesWithKeyword = $pagesWithKeyword;
-        $this->textPositions = $textPositions;
-        $this->fileData = $fileData;
+        $this->filesData = $filesData;
         $this->keyword = $keyword;
         $this->searchId = $searchId;
         $this->onConnection('database');
@@ -47,8 +46,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
     public function handle()
     {
         $results = [];
-        info('📢 شروع جمع کردن نتایج');
-        foreach ($this->fileData as $file) {
+        foreach ($this->filesData as $file) {
             $fileName = $file['file_name'];
             $filePath = $file['file_path'];
             $docName = $file['doc_name'];
@@ -80,9 +78,9 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
 
 
             // ---- خواندن صفحات متنی ----
-            $textPages = Cache::get($textKey, []);
-            // Log::info("GET KEY: $textKey", ['path' => $filePath]);
-            Log::info('✅textPages:  ', $textPages);
+            // $textPages = Cache::get($textKey, []);
+            $textPages = $this->pagesWithKeyword;
+            Log::info('✅textPages:  ', $this->pagesWithKeyword);
             // $textPositions = Cache::get($textPositionKey, []);
             // Cache::forget($textKey);
             // Cache::forget($textPositionKey);
