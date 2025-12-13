@@ -21,7 +21,7 @@ class PdfSearchService6
 {
     use Batchable;
 
-    public function searchFilesByArchitecture($files, $keyword, $dirPath, $searchId)
+    public function searchFilesByArchitecture($files, $keyword, $dirPath, $rel, $searchId)
     {
 
         $pdftotext = "C:\poppler-25.11.0\Library\bin\\pdftotext.exe";
@@ -29,20 +29,23 @@ class PdfSearchService6
 
         $allJobs = [];
         $results = [];
-        
+
         // برای هر فایل
         foreach ($files as $file) {
             $filePath = public_path('storage/files/' . $dirPath . '/' . $file->filePath);
+            
             // Log::info("filePath:" . $filePath);
+
             if (!file_exists($filePath)) {
-                $results[] = [
-                    'file_name' => $file->fileName,
-                    'file_path' => $filePath,
-                    'doc_name' => $file->process->title,
-                    'found_in_text' => null,
-                    'text_positions' => null,
-                    'status' => 'file not found',
-                ];
+                // $results[] = [
+                //     'file_name' => $file->fileName,
+                //     'file_path' => $filePath,
+                //     'doc_name' => $file->{$rel}->title,
+                //     'architecture_name' => $rel == 'process' ? $file->{$rel}->architecture->title : $file->{$rel}->process->architecture->title,
+                //     'found_in_text' => null,
+                //     'text_positions' => null,
+                //     'status' => 'file not found',
+                // ];
                 continue;
             }
 
@@ -78,7 +81,7 @@ class PdfSearchService6
 
             // اندازه‌هایی که در بیش از نصف صفحات تکرار شدن رو ثابت در نظر بگیر
             $logoSizes = [];
-            
+
             foreach ($allSizes as $size => $count) {
                 if ($count >= ($totalPages / 2)) {
                     $logoSizes[] = $size;
@@ -92,12 +95,13 @@ class PdfSearchService6
                     ' -l ' . $page .
                     ' -layout -enc UTF-8 -q ' .
                     escapeshellarg($filePath) . ' -');
-                $textRaw = $this->removeUnicodeControls($textRaw);
-                // $textRaw = $this->fixPdfExtractErrors($textRaw);
-                
-                $textRaw = $this->normalizePersianText($textRaw);
-                 
+
+
                 if ($textRaw !== null) {
+                    $textRaw = $this->removeUnicodeControls($textRaw);
+                    // $textRaw = $this->fixPdfExtractErrors($textRaw);
+
+                    $textRaw = $this->normalizePersianText($textRaw);
                     // تلاش اتوماتیک برای تبدیل به UTF-8
                     $detected = mb_detect_encoding($textRaw, [
                         'UTF-8',
@@ -114,12 +118,12 @@ class PdfSearchService6
                         $detected = 'UTF-8';
                     }
                     $text = mb_convert_encoding($textRaw, 'UTF-8', $detected);
-                     
+
                 } else {
                     $text = '';
                 }
-                
-                
+
+
                 $pageHasRealImage = false;
                 if (isset($images[$page])) {
                     foreach ($images[$page] as $img) {
@@ -148,7 +152,7 @@ class PdfSearchService6
             Cache::put($textKey, $pagesWithKeyword, now()->addMinutes(60));
             // Log::info("PUT KEY: $textKey", ['path' => $file->filePath]);
             // Cache::put($positionKey, $textPositions, now()->addMinutes(60));
-            
+
             // مرحله 2: افزودن صفحات نیازمند OCR به لیست Job کلی
             foreach ($ocrQueue as $page) {
                 $job = new OcrPdfPageJob4($page, $file->filePath, $keyword, $dirPath, $gs);
@@ -163,9 +167,9 @@ class PdfSearchService6
                     'file_name' => $file->fileName,
                     // 'file_path'=> url('storage/files/' . $dirPath .'/'. $file->filePath),
                     'file_path' => $file->filePath,
-                    'doc_name' => $file->process->title,
-                    'architecture_name' => $file->process->architecture->title,
-                    'code' => $file->process->code,
+                    'doc_name' => $file->{$rel}->title,
+                    'architecture_name' => $rel == 'process' ? $file->{$rel}->architecture->title : $file->{$rel}->process->architecture->title,
+                    'code' => $file->{$rel}->code,
                     'found_in_text' => $pagesWithKeyword,
                     // 'text_positions' => $textPositions, // موقعیت‌های متن
                     // 'status' => count($ocrQueue) ? 'OCR pending' : 'complete',
@@ -174,18 +178,18 @@ class PdfSearchService6
         }
 
         if (count($allJobs)) {
-            $filesData = $files->map(function ($file) {
+            $filesData = $files->map(function ($file) use ($rel) {
                 return [
                     'id' => $file->id,
                     'file_name' => $file->fileName,
                     'file_path' => $file->filePath,
-                    'doc_name' => $file->process->title,
-                    'architecture_name' => $file->process->architecture->title,
-                    'code' => $file->process->code,
+                    'doc_name' => $file->{$rel}->title,
+                    'architecture_name' => $rel == 'process' ? $file->{$rel}->architecture->title : $file->{$rel}->process->architecture->title,
+                    'code' => $file->{$rel}->code,
                 ];
             })->toArray();
-           
-            
+
+
             Bus::batch($allJobs)
                 ->then(function (Batch $batch) use ($filesData, $keyword, $searchId, $pagesWithKeyword) {
                     // بعد از تمام شدن OCR همه فایل‌ها
@@ -331,24 +335,24 @@ class PdfSearchService6
         return strtr($text, $map);
     }
     private function removeUnicodeControls(string $text): string
-{
-    // حذف کاراکترهای جهت‌دهی بی‌صدا (directional marks)
-    $controls = [
-        "\u{202A}", // LRE
-        "\u{202B}", // RLE
-        "\u{202D}", // LRO
-        "\u{202E}", // RLO
-        "\u{202C}", // PDF
-        "\u{2066}", // LRI
-        "\u{2067}", // RLI
-        "\u{2068}", // FSI
-        "\u{2069}", // PDI
-        "\u{200F}", // RTL mark
-        "\u{200E}", // LTR mark
-        "\u{061C}", // Arabic letter mark
-    ];
+    {
+        // حذف کاراکترهای جهت‌دهی بی‌صدا (directional marks)
+        $controls = [
+            "\u{202A}", // LRE
+            "\u{202B}", // RLE
+            "\u{202D}", // LRO
+            "\u{202E}", // RLO
+            "\u{202C}", // PDF
+            "\u{2066}", // LRI
+            "\u{2067}", // RLI
+            "\u{2068}", // FSI
+            "\u{2069}", // PDI
+            "\u{200F}", // RTL mark
+            "\u{200E}", // LTR mark
+            "\u{061C}", // Arabic letter mark
+        ];
 
-    return str_replace($controls, '', $text);
-}
+        return str_replace($controls, '', $text);
+    }
 
 }

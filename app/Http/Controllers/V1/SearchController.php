@@ -13,6 +13,8 @@ use App\Http\Resources\SubProcessClientResource;
 use App\Procedure;
 use App\Process;
 use App\ProcessFile;
+use App\SubProcessFile;
+use App\ProcedureFile;
 use App\Services\PdfSearchService3;
 use App\Services\PdfSearchService6;
 use App\SubProcess;
@@ -277,50 +279,125 @@ class SearchController extends ApiController
                                         ->with('architecture:id,title');
                                 }
                             ])->get();
-                    $fileSearch = new PdfSearchService6();
-
-                    $results = $fileSearch->searchFilesByArchitecture($files, $wordSearch, 'processes', $searchId);
-                    $perPage = 10;
-                    $page = 1;
-
-                    $collection = collect($results['results'])->map(function ($item) {
-                        return (object) $item;
-                    });
-                    $total = $collection->count();
-
-                    $paginated = new LengthAwarePaginator(
-                        $collection->forPage($page, $perPage)->values(),
-                        $total,
-                        $perPage,
-                        $page,
-                        ['path' => request()->url(), 'query' => request()->query()]
-                    );
-                    return $this->successResponse([
-                        "searchId" => $searchId,
-                        "keyword" => $wordSearch,
-                        "typeDoc" => "فرایند",
-                        "status" => $results['status'],
-                        "files" => ProcessFileSearchResult::collection($paginated),
-                        "links" => ProcessFileSearchResult::collection($paginated)->response()->getData()->links,
-                        "meta" => ProcessFileSearchResult::collection($paginated)->response()->getData()->meta
-                    ], 200);
+                    $dir = 'processes';
+                    $type = 'فرایند';
+                    $rel = 'process';
 
                     break;
                 case "subProcess":
+                    $files = SubProcessFile::whereHas('subProcess', function ($query) use ($process_id) {
+                        $query->where('process_id', $process_id);
+                    })->where('fileName', 'like', '%.pdf')->with([
+                                'subProcess' => function ($query) {
+                                    $query->select('id', 'title', 'architecture_id', 'process_id', 'code')->with('process:id,title,architecture_id', 'architecture:id,title')
+                                    ;
+                                }
+                            ])->get();
+                    $dir = 'sub-processes';
+                    $type = 'زیر فرایند';
+                    $rel = 'subProcess';
+                    // return $files;
                     break;
                 case "procedure":
+                    $files = ProcedureFile::whereHas('procedure', function ($query) use ($process_id) {
+                        $query->where('process_id', $process_id)->where('docType', 'procedures');
+                    })->where('fileName', 'like', '%.pdf')->with([
+                                'procedure' => function ($query) {
+                                    $query->select('id', 'title', 'architecture_id', 'process_id', 'code')->with('process:id,title,architecture_id', 'architecture:id,title')
+                                    ;
+                                }
+                            ])->get();
+                    $dir = 'procedures';
+                    $type = 'روش اجرایی';
+                    $rel = 'procedure';
+                    // return $files;
                     break;
                 case "instruction":
+                    $files = ProcedureFile::whereHas('procedure', function ($query) use ($process_id) {
+                        $query->where('process_id', $process_id)->where('docType', 'instruction');
+                    })->where('fileName', 'like', '%.pdf')->with([
+                                'procedure' => function ($query) {
+                                    $query->select('id', 'title', 'architecture_id', 'process_id', 'code')->with('process:id,title,architecture_id', 'architecture:id,title')
+                                    ;
+                                }
+                            ])->get();
+                    $dir = 'procedures';
+                    $type = 'دستورالعمل';
+                    $rel = 'procedure';
+                    // return $files;
                     break;
                 case "contract":
+                    $files = ProcedureFile::whereHas('procedure', function ($query) use ($process_id) {
+                        $query->where('process_id', $process_id)->where('docType', 'contract');
+                    })->where('fileName', 'like', '%.pdf')->with([
+                                'procedure' => function ($query) {
+                                    $query->select('id', 'title', 'architecture_id', 'process_id', 'code')->with('process:id,title,architecture_id', 'architecture:id,title')
+                                    ;
+                                }
+                            ])->get();
+                    $dir = 'procedures';
+                    $type = 'قرارداد';
+                    $rel = 'procedure';
+                    // return $files;
                     break;
                 case "form":
+                    $files = ProcedureFile::whereHas('procedure', function ($query) use ($process_id) {
+                        $query->where('process_id', $process_id)->where('docType', 'form');
+                    })->where('fileName', 'like', '%.pdf')->with([
+                                'procedure' => function ($query) {
+                                    $query->select('id', 'title', 'architecture_id', 'process_id', 'code')->with('process:id,title,architecture_id', 'architecture:id,title')
+                                    ;
+                                }
+                            ])->get();
+                    $dir = 'procedures';
+                    $type = 'فرم';
+                    $rel = 'procedure';
+                    // return $files;
                     break;
                 case "regulation":
+                    $files = ProcedureFile::whereHas('procedure', function ($query) use ($process_id) {
+                        $query->where('process_id', $process_id)->where('docType', 'regulation');
+                    })->where('fileName', 'like', '%.pdf')->with([
+                                'procedure' => function ($query) {
+                                    $query->select('id', 'title', 'architecture_id', 'process_id', 'code')->with('process:id,title,architecture_id', 'architecture:id,title')
+                                    ;
+                                }
+                            ])->get();
+                    $dir = 'procedures';
+                    $type = 'آئین نامه';
+                    $rel = 'procedure';
+                    // return $files;
                     break;
                 default:
                     break;
             }
+            $fileSearch = new PdfSearchService6();
+
+            $results = $fileSearch->searchFilesByArchitecture($files, $wordSearch, $dir, $rel, $searchId);
+            $perPage = 10;
+            $page = 1;
+
+            $collection = collect($results['results'])->map(function ($item) {
+                return (object) $item;
+            });
+            $total = $collection->count();
+
+            $paginated = new LengthAwarePaginator(
+                $collection->forPage($page, $perPage)->values(),
+                $total,
+                $perPage,
+                $page,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
+            return $this->successResponse([
+                "searchId" => $searchId,
+                "keyword" => $wordSearch,
+                "typeDoc" => $type,
+                "status" => $results['status'],
+                "files" => ProcessFileSearchResult::collection($paginated),
+                "links" => ProcessFileSearchResult::collection($paginated)->response()->getData()->links,
+                "meta" => ProcessFileSearchResult::collection($paginated)->response()->getData()->meta
+            ], 200);
         }
     }
     public function doSearch(Request $request)
@@ -545,9 +622,10 @@ class SearchController extends ApiController
 
         }
     }
-    
-    public function getOcrResults(Request $request){
-       $searchId = $request->searchId;
+
+    public function getOcrResults(Request $request)
+    {
+        $searchId = $request->searchId;
         // $keyword = $request->keyword;
         $results = [];
         $results = Cache::get("ocr_result_{$searchId}", []);

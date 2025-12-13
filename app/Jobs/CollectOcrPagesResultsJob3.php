@@ -47,6 +47,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
     {
         $results = [];
         foreach ($this->filesData as $file) {
+            
             $fileName = $file['file_name'];
             $filePath = $file['file_path'];
             $docName = $file['doc_name'];
@@ -78,32 +79,32 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
 
 
             // ---- خواندن صفحات متنی ----
-            // $textPages = Cache::get($textKey, []);
-            $textPages = $this->pagesWithKeyword;
-            Log::info('✅textPages:  ', $this->pagesWithKeyword);
+            $textPages = Cache::get($textKey, []);
+            // $textPages = $this->pagesWithKeyword;
+            Log::info('✅textPages:  ', $textPages);
             // $textPositions = Cache::get($textPositionKey, []);
-            // Cache::forget($textKey);
+            Cache::forget($textKey);
             // Cache::forget($textPositionKey);
 
-            $allPositions = [];
-            foreach ($this->textPositions as $page => $positions) {
-                foreach ($positions as $pos) {
-                    $pos['type'] = 'text';
-                    $allPositions[] = $pos;
-                }
-            }
-            foreach ($ocrPositions as $page => $positions) {
-                foreach ($positions as $pos) {
-                    $pos['type'] = 'ocr';
-                    $allPositions[] = $pos;
-                }
-            }
-            usort($allPositions, function ($a, $b) {
-                if ($a['page'] === $b['page']) {
-                    return $a['position'] - $b['position'];
-                }
-                return $a['page'] - $b['page'];
-            });
+            // $allPositions = [];
+            // foreach ($textPages as $page => $positions) {
+            //     foreach ($positions as $pos) {
+            //         $pos['type'] = 'text';
+            //         $allPositions[] = $pos;
+            //     }
+            // }
+            // foreach ($ocrPositions as $page => $positions) {
+            //     foreach ($positions as $pos) {
+            //         $pos['type'] = 'ocr';
+            //         $allPositions[] = $pos;
+            //     }
+            // }
+            // usort($allPositions, function ($a, $b) {
+            //     if ($a['page'] === $b['page']) {
+            //         return $a['position'] - $b['position'];
+            //     }
+            //     return $a['page'] - $b['page'];
+            // });
             if (count($textPages) || count($ocrPages)) {
                 Log::info('✅این فایل کلمه را دارد*************** ');
                 Log::info(array_map('intval', $textPages));
@@ -116,8 +117,8 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
                     'architecture_name' => $architectureName ?? null,
                     'found_in_text' => array_map('intval', $textPages),
                     'found_in_images' => array_map('intval', $ocrPages),
-                    'positions' => $allPositions, // تمام موقعیت‌های دقیق
-                    'total_matches' => count($allPositions)
+                    // 'positions' => $allPositions, // تمام موقعیت‌های دقیق
+                    // 'total_matches' => count($allPositions)
                 ];
             }
         }
