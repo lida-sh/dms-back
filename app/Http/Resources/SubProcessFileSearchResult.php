@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ProcessFileSearchResult extends JsonResource
+class SubProcessFileSearchResult extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -21,8 +21,6 @@ class ProcessFileSearchResult extends JsonResource
             'architecture_name' => $this->architecture_name ?? null,
             'code' => $this->code ?? null,
             'found_in_text' => $this->found_in_text ?? [],
-            // 'text_positions' => $this->text_positions ?? [],
-            // 'positions' => $this->positions ?? [],
             'found_in_images' => $this->found_in_images ?? [],
             'dir' => $this->dir
 

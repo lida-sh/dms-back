@@ -18,7 +18,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
 
     // protected $files;
     protected $filesData;
-    protected $pagesWithKeyword;
+    protected $dir;
     protected $textPositions;
 
     protected $keyword;
@@ -28,9 +28,9 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($filesData, $keyword, $searchId, $pagesWithKeyword)
+    public function __construct($filesData, $keyword, $searchId, $dir)
     {
-        $this->pagesWithKeyword = $pagesWithKeyword;
+        $this->dir = $dir;
         $this->filesData = $filesData;
         $this->keyword = $keyword;
         $this->searchId = $searchId;
@@ -47,12 +47,13 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
     {
         $results = [];
         foreach ($this->filesData as $file) {
-            
+
             $fileName = $file['file_name'];
             $filePath = $file['file_path'];
             $docName = $file['doc_name'];
             $architectureName = $file['architecture_name'];
             $code = $file['code'];
+            $dir = $file['dir'];
             // $filePath = public_path('storage/files/processes/' . $file->filePath);
 
             $ocrKey = 'ocr_pages_' . md5($filePath); // OCR صفحات تصویری
@@ -115,6 +116,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
                     'doc_name' => $docName ?? null,
                     'code' => $code ?? null,
                     'architecture_name' => $architectureName ?? null,
+                    'dir' => $dir,
                     'found_in_text' => array_map('intval', $textPages),
                     'found_in_images' => array_map('intval', $ocrPages),
                     // 'positions' => $allPositions, // تمام موقعیت‌های دقیق
@@ -123,11 +125,12 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
             }
         }
         Cache::put("ocr_result_{$this->searchId}", $results, 3600);
-    
+
 
         event(new OcrCompleted([
             'search_id' => $this->searchId,
-            'status' => 'completed'
+            'status' => 'completed',
+            'dir'=> $dir
         ]));
 
     }

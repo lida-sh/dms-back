@@ -8,6 +8,8 @@ use App\Http\Controllers\V1\Admin\ApiController;
 use App\Http\Resources\ProcedureClientResource;
 use App\Http\Resources\ProcessClientResource;
 use App\Http\Resources\ProcessFileSearchResult;
+use App\Http\Resources\SubProcessFileSearchResult;
+use App\Http\Resources\ProcedureFileSearchResult;
 use App\Http\Resources\ProcessResource;
 use App\Http\Resources\SubProcessClientResource;
 use App\Procedure;
@@ -389,14 +391,31 @@ class SearchController extends ApiController
                 $page,
                 ['path' => request()->url(), 'query' => request()->query()]
             );
+            switch ($dir) {
+                case "processes":
+                    $resource = ProcessFileSearchResult::collection($paginated)->response()->getData(true);
+                    break;
+                case "subProcesses":
+                    $resource = SubProcessFileSearchResult::collection($paginated)->response()->getData(true);
+                    break;
+                case "procedures":
+                    $resource = ProcedureFileSearchResult::collection($paginated)->response()->getData(true);
+                    break;
+                default:
+                    break;
+
+            }
             return $this->successResponse([
                 "searchId" => $searchId,
                 "keyword" => $wordSearch,
                 "typeDoc" => $type,
                 "status" => $results['status'],
-                "files" => ProcessFileSearchResult::collection($paginated),
-                "links" => ProcessFileSearchResult::collection($paginated)->response()->getData()->links,
-                "meta" => ProcessFileSearchResult::collection($paginated)->response()->getData()->meta
+                "files" => $resource['data'],
+                "links" => $resource['links'],
+                "meta" => $resource['meta']
+                // "files" => ProcessFileSearchResult::collection($paginated),
+                // "links" => ProcessFileSearchResult::collection($paginated)->response()->getData()->links,
+                // "meta" => ProcessFileSearchResult::collection($paginated)->response()->getData()->meta
             ], 200);
         }
     }
@@ -626,7 +645,8 @@ class SearchController extends ApiController
     public function getOcrResults(Request $request)
     {
         $searchId = $request->searchId;
-        // $keyword = $request->keyword;
+        $dir = $request->dir;
+        $keyword = $request->keyword;
         $results = [];
         $results = Cache::get("ocr_result_{$searchId}", []);
         Cache::forget("ocr_result_{$searchId}");
@@ -644,21 +664,24 @@ class SearchController extends ApiController
             $page,
             ['path' => '', 'query' => []]
         );
-        $resource = ProcessFileSearchResult::collection($paginated)->response()->getData(true);
+        switch ($dir) {
+            case "processes":
+                $resource = ProcessFileSearchResult::collection($paginated)->response()->getData(true);
+                break;
+            case "subProcesses":
+                $resource = SubProcessFileSearchResult::collection($paginated)->response()->getData(true);
+                break;
+            case "procedures":
+                $resource = ProcedureFileSearchResult::collection($paginated)->response()->getData(true);
+                break;
+            default:
+                break;
 
-        // $responseData = [
-        //     "searchId" => $searchId,
-        //     "keyword" => $keyword,
-        //     "typeDoc" => "فرایند",
-        //     "status" => 'کامل',
-        //     "files" => $resource['data'],
-        //     "links" => $resource['links'],
-        //     "meta" => $resource['meta']
-        // ];
+        }
         return $this->successResponse([
             "searchId" => $searchId,
-            // "keyword" => $keyword,
-            "typeDoc" => "فرایند",
+            "keyword" => $keyword,
+            "typeDoc" => $dir,
             "status" => 'کامل',
             "files" => $resource['data'],
             "links" => $resource['links'],

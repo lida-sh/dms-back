@@ -37,15 +37,7 @@ class PdfSearchService6
             // Log::info("filePath:" . $filePath);
 
             if (!file_exists($filePath)) {
-                // $results[] = [
-                //     'file_name' => $file->fileName,
-                //     'file_path' => $filePath,
-                //     'doc_name' => $file->{$rel}->title,
-                //     'architecture_name' => $rel == 'process' ? $file->{$rel}->architecture->title : $file->{$rel}->process->architecture->title,
-                //     'found_in_text' => null,
-                //     'text_positions' => null,
-                //     'status' => 'file not found',
-                // ];
+                Log::info("File not found:" . $filePath);
                 continue;
             }
 
@@ -170,6 +162,7 @@ class PdfSearchService6
                     'doc_name' => $file->{$rel}->title,
                     'architecture_name' => $rel == 'process' ? $file->{$rel}->architecture->title : $file->{$rel}->process->architecture->title,
                     'code' => $file->{$rel}->code,
+                    'dir' => $dirPath,
                     'found_in_text' => $pagesWithKeyword,
                     // 'text_positions' => $textPositions, // موقعیت‌های متن
                     // 'status' => count($ocrQueue) ? 'OCR pending' : 'complete',
@@ -178,7 +171,7 @@ class PdfSearchService6
         }
 
         if (count($allJobs)) {
-            $filesData = $files->map(function ($file) use ($rel) {
+            $filesData = $files->map(function ($file) use ($rel, $dirPath) {
                 return [
                     'id' => $file->id,
                     'file_name' => $file->fileName,
@@ -186,14 +179,16 @@ class PdfSearchService6
                     'doc_name' => $file->{$rel}->title,
                     'architecture_name' => $rel == 'process' ? $file->{$rel}->architecture->title : $file->{$rel}->process->architecture->title,
                     'code' => $file->{$rel}->code,
+                    'dir'=>$dirPath
+                    
                 ];
             })->toArray();
 
 
             Bus::batch($allJobs)
-                ->then(function (Batch $batch) use ($filesData, $keyword, $searchId, $pagesWithKeyword) {
+                ->then(function (Batch $batch) use ($filesData, $keyword, $searchId, $dirPath) {
                     // بعد از تمام شدن OCR همه فایل‌ها
-                    CollectOcrPagesResultsJob3::dispatch($filesData, $keyword, $searchId, $pagesWithKeyword)->onQueue('ocr')->onConnection('database');
+                    CollectOcrPagesResultsJob3::dispatch($filesData, $keyword, $searchId, $dirPath)->onQueue('ocr')->onConnection('database');
 
                 })
                 ->catch(function (Batch $batch, Throwable $e) {
