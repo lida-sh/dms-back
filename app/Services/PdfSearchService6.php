@@ -21,7 +21,7 @@ class PdfSearchService6
 {
     use Batchable;
 
-    public function searchFilesByArchitecture($files, $keyword, $dirPath, $rel, $searchId)
+    public function searchFilesByArchitecture($files, $keyword, $dirPath, $rel, $type, $searchId)
     {
 
         $pdftotext = "C:\poppler-25.11.0\Library\bin\\pdftotext.exe";
@@ -163,6 +163,7 @@ class PdfSearchService6
                     'architecture_name' => $rel == 'process' ? $file->{$rel}->architecture->title : $file->{$rel}->process->architecture->title,
                     'code' => $file->{$rel}->code,
                     'dir' => $dirPath,
+                    'type' => $type,
                     'found_in_text' => $pagesWithKeyword,
                     // 'text_positions' => $textPositions, // موقعیت‌های متن
                     // 'status' => count($ocrQueue) ? 'OCR pending' : 'complete',
@@ -171,7 +172,7 @@ class PdfSearchService6
         }
 
         if (count($allJobs)) {
-            $filesData = $files->map(function ($file) use ($rel, $dirPath) {
+            $filesData = $files->map(function ($file) use ($rel, $dirPath, $type) {
                 return [
                     'id' => $file->id,
                     'file_name' => $file->fileName,
@@ -179,7 +180,8 @@ class PdfSearchService6
                     'doc_name' => $file->{$rel}->title,
                     'architecture_name' => $rel == 'process' ? $file->{$rel}->architecture->title : $file->{$rel}->process->architecture->title,
                     'code' => $file->{$rel}->code,
-                    'dir'=>$dirPath
+                    'dir'=>$dirPath,
+                    'type' => $type,
                     
                 ];
             })->toArray();

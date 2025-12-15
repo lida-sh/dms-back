@@ -264,12 +264,12 @@ class SearchController extends ApiController
             }
         } elseif ($itemSearch === "files") {
             $searchId = (string) Str::uuid();
-            Cache::put("search_{$searchId}", [
-                'keyword' => $wordSearch,
-                'status' => 'pending',
-                'progress' => 0,
-                'results' => [],
-            ], now()->addMinutes(20));
+            // Cache::put("search_{$searchId}", [
+            //     'keyword' => $wordSearch,
+            //     'status' => 'pending',
+            //     'progress' => 0,
+            //     'results' => [],
+            // ], now()->addMinutes(20));
             switch ($docType) {
                 case "process":
                     // dd(mb_list_encodings());
@@ -375,7 +375,7 @@ class SearchController extends ApiController
             }
             $fileSearch = new PdfSearchService6();
 
-            $results = $fileSearch->searchFilesByArchitecture($files, $wordSearch, $dir, $rel, $searchId);
+            $results = $fileSearch->searchFilesByArchitecture($files, $wordSearch, $dir, $rel, $type, $searchId);
             $perPage = 10;
             $page = 1;
 
@@ -409,6 +409,7 @@ class SearchController extends ApiController
                 "searchId" => $searchId,
                 "keyword" => $wordSearch,
                 "typeDoc" => $type,
+                "dir" => $dir,
                 "status" => $results['status'],
                 "files" => $resource['data'],
                 "links" => $resource['links'],
@@ -644,8 +645,10 @@ class SearchController extends ApiController
 
     public function getOcrResults(Request $request)
     {
+        // return $request->all();
         $searchId = $request->searchId;
         $dir = $request->dir;
+        $type = $request->type;
         $keyword = $request->keyword;
         $results = [];
         $results = Cache::get("ocr_result_{$searchId}", []);
@@ -681,7 +684,8 @@ class SearchController extends ApiController
         return $this->successResponse([
             "searchId" => $searchId,
             "keyword" => $keyword,
-            "typeDoc" => $dir,
+            "typeDoc" => $type,
+            "dir" => $dir,
             "status" => 'کامل',
             "files" => $resource['data'],
             "links" => $resource['links'],

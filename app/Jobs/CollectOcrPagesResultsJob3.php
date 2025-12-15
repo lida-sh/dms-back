@@ -54,6 +54,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
             $architectureName = $file['architecture_name'];
             $code = $file['code'];
             $dir = $file['dir'];
+            $type = $file['type'];
             // $filePath = public_path('storage/files/processes/' . $file->filePath);
 
             $ocrKey = 'ocr_pages_' . md5($filePath); // OCR صفحات تصویری
@@ -117,6 +118,7 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
                     'code' => $code ?? null,
                     'architecture_name' => $architectureName ?? null,
                     'dir' => $dir,
+                    'type' => $type,
                     'found_in_text' => array_map('intval', $textPages),
                     'found_in_images' => array_map('intval', $ocrPages),
                     // 'positions' => $allPositions, // تمام موقعیت‌های دقیق
@@ -129,8 +131,10 @@ class CollectOcrPagesResultsJob3 implements ShouldQueue
 
         event(new OcrCompleted([
             'search_id' => $this->searchId,
+            'keyword' => $this->keyword,
             'status' => 'completed',
-            'dir'=> $dir
+            'dir'=> $dir,
+            'type'=> $type,
         ]));
 
     }
