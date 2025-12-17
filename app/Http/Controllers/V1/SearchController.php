@@ -266,10 +266,7 @@ class SearchController extends ApiController
             $searchId = (string) Str::uuid();
             // Cache::put("search_{$searchId}", [
             //     'keyword' => $wordSearch,
-            //     'status' => 'pending',
-            //     'progress' => 0,
-            //     'results' => [],
-            // ], now()->addMinutes(20));
+            // ], now()->addMinutes(30));
             switch ($docType) {
                 case "process":
                     // dd(mb_list_encodings());
@@ -645,11 +642,13 @@ class SearchController extends ApiController
 
     public function getOcrResults(Request $request)
     {
-        // return $request->all();
         $searchId = $request->searchId;
+        // $data = Cache::get("search_{$searchId}", []);
+        // $keyword = $data['keyword'] ?? null;
+        $keyword = $request->keyword;
         $dir = $request->dir;
         $type = $request->type;
-        $keyword = $request->keyword;
+        
         $results = [];
         $results = Cache::get("ocr_result_{$searchId}", []);
         Cache::forget("ocr_result_{$searchId}");
