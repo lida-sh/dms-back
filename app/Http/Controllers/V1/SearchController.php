@@ -388,17 +388,19 @@ class SearchController extends ApiController
                 $page,
                 ['path' => request()->url(), 'query' => request()->query()]
             );
-            switch ($dir) {
-                case "processes":
+            switch ($docType) {
+                case "process":
                     $resource = ProcessFileSearchResult::collection($paginated)->response()->getData(true);
                     break;
-                case "subProcesses":
+                case "subProcess":
                     $resource = SubProcessFileSearchResult::collection($paginated)->response()->getData(true);
                     break;
-                case "procedures":
+                case "procedure":
                     $resource = ProcedureFileSearchResult::collection($paginated)->response()->getData(true);
                     break;
                 default:
+                    $resource = [];
+                    dd($resource);
                     break;
 
             }
@@ -408,6 +410,7 @@ class SearchController extends ApiController
                 "typeDoc" => $type,
                 "dir" => $dir,
                 "status" => $results['status'],
+                "statusText" => $results['statusText'],
                 "files" => $resource['data'],
                 "links" => $resource['links'],
                 "meta" => $resource['meta']
@@ -648,7 +651,7 @@ class SearchController extends ApiController
         $keyword = $request->keyword;
         $dir = $request->dir;
         $type = $request->type;
-        
+
         $results = [];
         $results = Cache::get("ocr_result_{$searchId}", []);
         Cache::forget("ocr_result_{$searchId}");
@@ -685,7 +688,8 @@ class SearchController extends ApiController
             "keyword" => $keyword,
             "typeDoc" => $type,
             "dir" => $dir,
-            "status" => 'کامل',
+            "statusText" => 'کامل',
+            "status" => 1,
             "files" => $resource['data'],
             "links" => $resource['links'],
             "meta" => $resource['meta']

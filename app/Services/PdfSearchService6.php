@@ -33,7 +33,7 @@ class PdfSearchService6
         // برای هر فایل
         foreach ($files as $file) {
             $filePath = public_path('storage/files/' . $dirPath . '/' . $file->filePath);
-            
+
             // Log::info("filePath:" . $filePath);
 
             if (!file_exists($filePath)) {
@@ -180,9 +180,9 @@ class PdfSearchService6
                     'doc_name' => $file->{$rel}->title,
                     'architecture_name' => $rel == 'process' ? $file->{$rel}->architecture->title : $file->{$rel}->process->architecture->title,
                     'code' => $file->{$rel}->code,
-                    'dir'=>$dirPath,
+                    'dir' => $dirPath,
                     'type' => $type,
-                    
+
                 ];
             })->toArray();
 
@@ -206,7 +206,8 @@ class PdfSearchService6
         // مرحله 4: پاسخ اولیه به فرانت
         return [
             'results' => $results,
-            'status' => count($allJobs) ? 'در حال پردازش ' . count($allJobs) . ' تصویر' : 'پردازش کامل شد.',
+            'statusText' => count($allJobs) ? 'در حال پردازش ' . count($allJobs) . ' تصویر' : 'پردازش کامل شد.',
+            'status' => count($allJobs) ? 0 : 1
         ];
     }
     private function findKeywordPositions($text, $keyword, $page)
